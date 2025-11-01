@@ -91,14 +91,14 @@ class DataAggregator:
 
 
 
-        # Fetch traffic
+        # Fetch princes_st_traffic
         try:
-            traffic_data = await self.traffic.fetch_traffic_princes_st()
-            traffic_score = self.traffic.calculate_score(traffic_data)
+            princes_st_traffic_data = await self.traffic.fetch_traffic_princes_st()
+            princes_st_traffic_score = self.traffic.calculate_score(princes_st_traffic_data)
         except Exception as e:
-            print(f"Traffic error: {e}")
-            traffic_data = None
-            traffic_score = 50  # fallback value
+            print(f"princes_st_traffic error: {e}")
+            princes_st_traffic_data = None
+            princes_st_traffic_score = 50  # fallback value
 
         # TODO: Add more sources here as you build them
         # social_data = await self.social.fetch()
@@ -144,12 +144,12 @@ class DataAggregator:
             },
             
 
-            'traffic': {
-                'score': traffic_score,
-                'current_speed': traffic_data['current_speed'] if traffic_data else None,
-                'free_flow_speed': traffic_data['free_flow_speed'] if traffic_data else None,
-                'road_closure': traffic_data['road_closure'] if traffic_data else None,
-                'raw': traffic_data
+            'princes street traffic': {
+                'score': princes_st_traffic_score,
+                'current_speed': princes_st_traffic_data['current_speed'] if princes_st_traffic_data else None,
+                'free_flow_speed': princes_st_traffic_data['free_flow_speed'] if princes_st_traffic_data else None,
+                'road_closure': princes_st_traffic_data['road_closure'] if princes_st_traffic_data else None,
+                'raw': princes_st_traffic_data
             },
 
             # Placeholder for future sources
@@ -163,7 +163,7 @@ class DataAggregator:
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,  # Weather affects mood
                 'energy': energy_score,  # TODO: calculate from multiple sources
-                'activity': traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,  # TODO: calculate from transit/traffic
+                'activity': princes_st_traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,  # TODO: calculate from transit/traffic
             }
 
 
