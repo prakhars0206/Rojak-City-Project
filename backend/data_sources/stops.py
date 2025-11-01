@@ -14,7 +14,7 @@ class BusStopFetcher:
 
             results = []
 
-            for vehicle in data.get("last_updated", []):
+            for vehicle in data.get("stops", []):
                 stop_id = vehicle.get("stop_id")
                 atco_code = vehicle.get("atco_code")
                 name = vehicle.get("name")
