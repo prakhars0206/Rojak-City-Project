@@ -176,6 +176,11 @@ async def get_traffic_data():
     """Get current traffic data for Portobello High Street"""
     return await aggregator.fetch_traffic_portobello_high_st_data()
 
+@app.get("/api/traffic/nicolson-street")
+async def get_traffic_data():
+    """Get current traffic data for Nicolson Street"""
+    return await aggregator.fetch_traffic_nicolson_st_data()
+
 @app.get("/api/live-transport")
 async def get_live_transport_data():
     """Get live locations of all public transport vehicles"""
