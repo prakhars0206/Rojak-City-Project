@@ -5,7 +5,16 @@ Real-time data aggregation for Edinburgh city visualization.
 ## Setup
 
 ### First Time Setup
-```bash
+
+```bash (Windows)
+**For PowerShell:**
+cd backend
+python -m venv venv
+source venv/Scripts/activate
+pip install -r requirements.txt
+```
+
+```bash (Mac/Linux)
 cd backend
 python3 -m venv venv
 source venv/bin/activate
@@ -19,7 +28,11 @@ cd backend
 ```
 
 Or manually:
-```bash
+```bash (Windows)
+source venv/Scripts/activate
+```
+
+```bash (Mac/Linux)
 source venv/bin/activate
 python app.py
 ```

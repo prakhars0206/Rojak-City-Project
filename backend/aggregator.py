@@ -2,7 +2,8 @@
 Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
-
+from backend.data_sources.liveVehicleLocation import LiveVehicleLocationFetcher
+from backend.data_sources.stops import BusStopFetcher
 from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
 from datetime import datetime
@@ -16,9 +17,10 @@ class DataAggregator:
         # Initialize all data sources
         self.weather = WeatherFetcher()
         self.energy = EnergyFetcher()
-        
+        self.liveLocation = LiveVehicleLocationFetcher()
+        self.stops = BusStopFetcher()
         # Add more sources later:
-        # self.traffic = TrafficFetcher()
+
         # self.social = SocialFetcher()
         
         self.last_data = None
