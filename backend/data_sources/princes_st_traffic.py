@@ -13,7 +13,7 @@ class TrafficFetcherPrincesSt:
 
     def __init__(self, api_key: str):
         self.api_key = api_key
-        self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative/10/json"
+        self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
         self.lat = 55.951744
         self.lon = -3.198057
 

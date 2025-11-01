@@ -13,7 +13,7 @@ class TrafficFetcherEdiAirport:
 
     def __init__(self, api_key: str):
         self.api_key = api_key
-        self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/relative/10/json"
+        self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
         self.lat = 55.948547
         self.lon = -3.363355
 
