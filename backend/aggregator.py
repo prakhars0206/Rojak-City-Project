@@ -3,7 +3,7 @@ Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
 
-from data_sources.princes_st_traffic import TrafficFetcher
+from data_sources.princes_st_traffic import TrafficFetcherPrincesSt
 from data_sources.liveVehicleLocation import LiveVehicleLocationFetcher
 from data_sources.stops import BusStopFetcher
 from data_sources.weather import WeatherFetcher
@@ -21,7 +21,8 @@ class DataAggregator:
 
         self.energy = EnergyFetcher()
 
-        self.traffic = TrafficFetcher
+        API_KEY = "yMoAyFyKAwwj4bE8OEFw3gfwhGPsBjVj"
+        self.traffic = TrafficFetcherPrincesSt(API_KEY)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
@@ -58,7 +59,7 @@ class DataAggregator:
 
         # Fetch traffic
         try:
-            traffic_data = await self.traffic.fetch_traffic()
+            traffic_data = await self.traffic.fetch_traffic_princes_st()
             traffic_score = self.traffic.calculate_score(traffic_data)
         except Exception as e:
             print(f"Traffic error: {e}")
