@@ -1,6 +1,7 @@
 import requests
 import json
 import csv
+import pandas as pd
 
 baseurl = 'https://tfe-opendata.com/api/v1/timetables/36235979'
 
