@@ -2,7 +2,7 @@
 Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
-
+from data_sources.lady_road_traffic import TrafficFetcherLadyRoad
 from data_sources.nicolson_st_traffic import TrafficFetcherNicolsonSt
 from data_sources.portobello_high_st_traffic import TrafficFetcherPortobelloHighSt
 from data_sources.edi_airport_traffic import TrafficFetcherEdiAirport
@@ -41,6 +41,7 @@ class DataAggregator:
         self.traffic_edi_airport = TrafficFetcherEdiAirport(tomtom_api_key)
         self.traffic_portobello_high_st = TrafficFetcherPortobelloHighSt(tomtom_api_key)
         self.traffic_nicolson_st = TrafficFetcherNicolsonSt(tomtom_api_key)
+        self.traffic_lady_road = TrafficFetcherLadyRoad(tomtom_api_key)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
@@ -143,6 +144,21 @@ class DataAggregator:
         try:
             data = await self.traffic_nicolson_st.fetch_traffic_nicolson_st()
             score = self.traffic_nicolson_st.calculate_score(data)
+            return {
+                'score': score,
+                'current_speed': data['current_speed'],
+                'free_flow_speed': data['free_flow_speed'],
+                'road_closure': data['road_closure'],
+                'raw': data
+            }
+        except Exception as e:
+            print(f"Traffic error: {e}")
+            return None
+
+    async def fetch_traffic_lady_road_data(self):
+        try:
+            data = await self.traffic_lady_road.fetch_traffic_lady_road()
+            score = self.traffic_lady_road.calculate_score(data)
             return {
                 'score': score,
                 'current_speed': data['current_speed'],
