@@ -2,7 +2,7 @@
 Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
-
+from data_sources.edi_airport_traffic import TrafficFetcherEdiAirport
 from data_sources.princes_st_traffic import TrafficFetcherPrincesSt
 from data_sources.liveVehicleLocation import LiveVehicleLocationFetcher
 from data_sources.flights import FlightFetcher
@@ -34,7 +34,8 @@ class DataAggregator:
 
 
 
-        self.traffic = TrafficFetcherPrincesSt(tomtom_api_key)
+        self.traffic_princes_st = TrafficFetcherPrincesSt(tomtom_api_key)
+        self.traffic_edi_airport = TrafficFetcherEdiAirport(tomtom_api_key)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
@@ -88,10 +89,25 @@ class DataAggregator:
             print(f"Flight error: {e}")
             return None
 
-    async def fetch_traffic_data(self):
+    async def fetch_traffic_princes_st_data(self):
         try:
-            data = await self.traffic.fetch_traffic_princes_st()
-            score = self.traffic.calculate_score(data)
+            data = await self.traffic_princes_st.fetch_traffic_princes_st()
+            score = self.traffic_princes_st.calculate_score(data)
+            return {
+                'score': score,
+                'current_speed': data['current_speed'],
+                'free_flow_speed': data['free_flow_speed'],
+                'road_closure': data['road_closure'],
+                'raw': data
+            }
+        except Exception as e:
+            print(f"Traffic error: {e}")
+            return None
+
+    async def fetch_traffic_edi_airport_data(self):
+        try:
+            data = await self.traffic_edi_airport.fetch_traffic_edi_airport()
+            score = self.traffic_edi_airport.calculate_score(data)
             return {
                 'score': score,
                 'current_speed': data['current_speed'],

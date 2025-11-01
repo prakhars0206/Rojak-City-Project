@@ -164,7 +164,12 @@ async def get_flight_data():
 @app.get("/api/traffic/princes-street")
 async def get_traffic_data():
     """Get current traffic data for Princes Street"""
-    return await aggregator.fetch_traffic_data()
+    return await aggregator.fetch_traffic_princes_st_data()
+
+@app.get("/api/traffic/edinburgh-airport")
+async def get_traffic_data():
+    """Get current traffic data for Edinburgh Airport"""
+    return await aggregator.fetch_traffic_edi_airport_data()
 
 @app.get("/api/live-transport")
 async def get_live_transport_data():
