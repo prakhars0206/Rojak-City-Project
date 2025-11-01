@@ -15,6 +15,9 @@ class BusStopFetcher:
             results = []
 
             for vehicle in data.get("stops", []):
+                destination = vehicle.get("destination", [])
+                if not destination:
+                    continue
                 stop_id = vehicle.get("stop_id")
                 atco_code = vehicle.get("atco_code")
                 name = vehicle.get("name")
@@ -27,7 +30,6 @@ class BusStopFetcher:
                 service_type = vehicle.get("service_type")
                 atco_longitude = vehicle.get("atco_longitude")
                 atco_latitude = vehicle.get("atco_latitude")
-                destination = vehicle.get("destination", [])
                 services = vehicle.get("services", [])
 
                 results.append({

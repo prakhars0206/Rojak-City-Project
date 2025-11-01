@@ -14,11 +14,13 @@ class LiveVehicleLocationFetcher:
             results = []
 
             for vehicle in data.get("vehicles", []):
+                destination = vehicle.get("destination")
+                if not destination:
+                    continue
                 vehicle_id = vehicle.get("vehicle_id")
                 latitude = vehicle.get("latitude")
                 longitude = vehicle.get("longitude")
                 speed = vehicle.get("speed")
-                destination = vehicle.get("destination")
                 journey_id = vehicle.get("journey_id")
                 vehicle_type = vehicle.get("vehicle_type")
                 heading = vehicle.get("heading")
