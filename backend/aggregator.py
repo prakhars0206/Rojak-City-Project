@@ -5,6 +5,7 @@ Makes it easy to add new data sources
 
 from data_sources.princes_st_traffic import TrafficFetcherPrincesSt
 from data_sources.liveVehicleLocation import LiveVehicleLocationFetcher
+from data_sources.flights import FlightFetcher
 from data_sources.stops import BusStopFetcher
 from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
@@ -20,6 +21,8 @@ class DataAggregator:
         self.weather = WeatherFetcher()
 
         self.energy = EnergyFetcher()
+        self.flights = FlightFetcher()
+
 
         API_KEY = "yMoAyFyKAwwj4bE8OEFw3gfwhGPsBjVj"
         self.traffic = TrafficFetcherPrincesSt(API_KEY)
@@ -68,6 +71,15 @@ class DataAggregator:
             print(f"Energy error: {e}")
             energy_data = None
             energy_score = 50 # default
+
+        try:
+            flight_data = await self.flights.fetch()
+            flight_score = self.flights.calculate_score(flight_data)
+        except Exception as e:
+            print(f"Flight error: {e}")
+            flight_data = None
+            flight_score = 0 # Default to no activity
+
 
 
         # Fetch traffic
@@ -121,6 +133,14 @@ class DataAggregator:
                 'dominant_fuel': energy_data['dominant_fuel'] if energy_data else 'Unknown',
                 'raw': energy_data
             },
+
+            'flights': {
+                'score': flight_score,
+                'arriving_count': len(flight_data['arriving']) if flight_data else 0,
+                'departing_count': len(flight_data['departing']) if flight_data else 0,
+                'total_in_air': flight_data['total_in_air'] if flight_data else 0,
+                'raw': flight_data
+            },
             
 
             'traffic': {
@@ -142,7 +162,7 @@ class DataAggregator:
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,  # Weather affects mood
                 'energy': energy_score,  # TODO: calculate from multiple sources
-                'activity': traffic_score * 0.8 + weather_score * 0.2,  # TODO: calculate from transit/traffic
+                'activity': traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,  # TODO: calculate from transit/traffic
             }
 
 
