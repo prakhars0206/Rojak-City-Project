@@ -38,9 +38,15 @@ async def data_loop():
             # Log for debugging
             weather_score = data['weather']['score']
             temp = data['weather']['temperature']
+
+            energy_score = data['energy']['score']
+            intensity = data['energy']['carbon_intensity']
+
             print(f"[{datetime.now().strftime('%H:%M:%S')}] "
                   f"Weather: {temp}°C (score: {weather_score}) | "
+                  f"Energy: {intensity} gCO2/kWh (score: {energy_score}) | "
                   f"Clients: {len(active_connections)}")
+
             
         except Exception as e:
             print(f"❌ Error in data loop: {e}")

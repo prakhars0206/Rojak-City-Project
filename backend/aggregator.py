@@ -4,6 +4,7 @@ Makes it easy to add new data sources
 """
 
 from data_sources.weather import WeatherFetcher
+from data_sources.energy import EnergyFetcher
 from datetime import datetime
 from typing import Dict, Optional
 
@@ -14,6 +15,7 @@ class DataAggregator:
     def __init__(self):
         # Initialize all data sources
         self.weather = WeatherFetcher()
+        self.energy = EnergyFetcher()
         
         # Add more sources later:
         # self.traffic = TrafficFetcher()
@@ -35,6 +37,15 @@ class DataAggregator:
             print(f"Weather error: {e}")
             weather_data = None
             weather_score = 50  # default
+
+        try:
+            energy_data = await self.energy.fetch()
+            energy_score = self.energy.calculate_score(energy_data)
+        except Exception as e:
+            print(f"Energy error: {e}")
+            energy_data = None
+            energy_score = 50 # default
+
         
         # TODO: Add more sources here as you build them
         # traffic_data = await self.traffic.fetch()
@@ -50,6 +61,12 @@ class DataAggregator:
                 'temperature': weather_data['temperature'] if weather_data else None,
                 'description': weather_data['description'] if weather_data else 'Unknown',
                 'raw': weather_data
+            },
+            'energy': {
+                'score': energy_score,
+                'carbon_intensity': energy_data['carbon_intensity'] if energy_data else None,
+                'dominant_fuel': energy_data['dominant_fuel'] if energy_data else 'Unknown',
+                'raw': energy_data
             },
             
             # Placeholder for future sources
@@ -67,7 +84,7 @@ class DataAggregator:
             # Overall city metrics (for your visualization)
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,  # Weather affects mood
-                'energy': 60,  # TODO: calculate from multiple sources
+                'energy': energy_score,  # TODO: calculate from multiple sources
                 'activity': 55,  # TODO: calculate from transit/traffic
             }
         }
