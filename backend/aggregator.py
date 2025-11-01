@@ -2,7 +2,7 @@
 Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
-
+from data_sources.princes_st_traffic import TrafficFetcher
 from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
 from datetime import datetime
@@ -15,8 +15,11 @@ class DataAggregator:
     def __init__(self):
         # Initialize all data sources
         self.weather = WeatherFetcher()
+
         self.energy = EnergyFetcher()
-        
+
+        self.traffic = TrafficFetcher
+
         # Add more sources later:
         # self.traffic = TrafficFetcher()
         # self.social = SocialFetcher()
@@ -46,9 +49,17 @@ class DataAggregator:
             energy_data = None
             energy_score = 50 # default
 
-        
+
+        # Fetch traffic
+        try:
+            traffic_data = await self.traffic.fetch_traffic()
+            traffic_score = self.traffic.calculate_score(traffic_data)
+        except Exception as e:
+            print(f"Traffic error: {e}")
+            traffic_data = None
+            traffic_score = 50  # fallback value
+
         # TODO: Add more sources here as you build them
-        # traffic_data = await self.traffic.fetch()
         # social_data = await self.social.fetch()
         
         # Combine everything into one object
@@ -69,12 +80,16 @@ class DataAggregator:
                 'raw': energy_data
             },
             
-            # Placeholder for future sources
+
             'traffic': {
-                'score': 50,  # TODO: real data
-                'raw': None
+                'score': traffic_score,
+                'current_speed': traffic_data['current_speed'] if traffic_data else None,
+                'free_flow_speed': traffic_data['free_flow_speed'] if traffic_data else None,
+                'road_closure': traffic_data['road_closure'] if traffic_data else None,
+                'raw': traffic_data
             },
-            
+
+            # Placeholder for future sources
             'social': {
                 'score': 50,  # TODO: real data
                 'mood': 50,
@@ -85,7 +100,7 @@ class DataAggregator:
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,  # Weather affects mood
                 'energy': energy_score,  # TODO: calculate from multiple sources
-                'activity': 55,  # TODO: calculate from transit/traffic
+                'activity': traffic_score * 0.8 + weather_score * 0.2,  # TODO: calculate from transit/traffic
             }
         }
         
