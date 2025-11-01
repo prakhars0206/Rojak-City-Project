@@ -2,6 +2,7 @@
 Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
+from statistics import mean
 
 from data_sources.gilmerton_road_traffic import TrafficFetcherGilmertonRoad
 from data_sources.lady_road_traffic import TrafficFetcherLadyRoad
@@ -214,14 +215,27 @@ class DataAggregator:
         weather_data = await self.fetch_weather_data() or {}
         energy_data = await self.fetch_energy_data() or {}
         flight_data = await self.fetch_flight_data() or {}
-        traffic_data = await self.fetch_traffic_data() or {}
+        traffic_princes_st_data = await self.fetch_traffic_princes_st_data() or {}
+        traffic_edi_airport_data = await self.fetch_traffic_edi_airport_data() or {}
+        traffic_portobello_high_st_data = await self.fetch_traffic_portobello_high_st_data() or {}
+        traffic_nicolson_st_data = await self.fetch_traffic_nicolson_st_data() or {}
+        traffic_lady_road_data = await self.fetch_traffic_lady_road_data() or {}
+        traffic_gilmerton_road_data = await self.fetch_traffic_gilmerton_road_data() or {}
         live_transport_data = await self.fetch_live_transport_data() or {}
         stops_data = await self.fetch_stops_data() or {}
+
 
         # Get scores for city_pulse calculation, with fallbacks
         weather_score = weather_data.get('score', 50)
         energy_score = energy_data.get('score', 50)
-        traffic_score = traffic_data.get('score', 50)
+        traffic_scores = [traffic_princes_st_data.get('score', 50),
+                          traffic_edi_airport_data.get('score', 50),
+                          traffic_portobello_high_st_data.get('score', 50),
+                          traffic_nicolson_st_data.get('score', 50),
+                          traffic_lady_road_data.get('score', 50),
+                          traffic_gilmerton_road_data.get('score', 50),
+                          ]
+        traffic_score = mean(traffic_scores)
         flight_score = flight_data.get('score', 0)
 
         combined_data = {
@@ -231,7 +245,12 @@ class DataAggregator:
             'weather': weather_data,
             'energy': energy_data,
             'flights': flight_data,
-            'princes_street_traffic': traffic_data,
+            'princes_street_traffic': traffic_princes_st_data,
+            'edi_airport_traffic': traffic_edi_airport_data,
+            'portobello_high_st_traffic': traffic_portobello_high_st_data,
+            'nicolson_st_traffic': traffic_nicolson_st_data,
+            'lady_road_traffic': traffic_lady_road_data,
+            'gilmerton_road_traffic': traffic_gilmerton_road_data,
             'social': {'score': 50, 'mood': 50, 'raw': None},
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,
