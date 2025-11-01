@@ -37,6 +37,19 @@ class DataAggregator:
         Fetch from all data sources and combine
         Returns unified data structure for frontend
         """
+        # Fetch live vehicle locations
+        try:
+            live_location_data = await self.liveLocation.fetch_transport()
+        except Exception as e:
+            print(f"Live location error: {e}")
+            live_location_data = None
+
+        # Fetch bus stops
+        try:
+            stops_data = await self.stops.fetch_stops()
+        except Exception as e:
+            print(f"Bus stops error: {e}")
+            stops_data = None
         
         # Fetch weather (you have this working!)
         try:
@@ -71,7 +84,29 @@ class DataAggregator:
         # Combine everything into one object
         combined_data = {
             'timestamp': datetime.now().isoformat(),
-            
+            # Live transport data
+            'live_transport': {
+                'vehicles': live_location_data['vehicle_id'] if live_location_data else 'Unknown',
+                'latitude' : live_location_data['latitude'] if live_location_data else None,
+                'longitude' : live_location_data['longitude'] if live_location_data else None,
+                'speed' : live_location_data['speed'] if live_location_data else None,
+                'destination' : live_location_data['destination'] if live_location_data else 'Unknown',
+                'journey_id' : live_location_data['journey_id'] if live_location_data else 'Unknown',
+                'vehicle_type' : live_location_data['vehicle_type'] if live_location_data else 'Unknown'
+            },
+
+            'stops' : {
+                'stop_id': stops_data['stop_id'] if stops_data else 'Unknown',
+                'name': stops_data['name'] if stops_data else 'Unknown',
+                'latitude': stops_data['latitude'] if stops_data else None,
+                'longitude': stops_data['longitude'] if stops_data else None,
+                'locality': stops_data['locality'] if stops_data else 'Unknown',
+                'direction': stops_data['direction'] if stops_data else 'Unknown',
+                'service_type': stops_data['service_type'] if stops_data else None,
+                'destination': stops_data['destination'] if stops_data else [],
+                'atco_longitude': stops_data['atco_longitude'] if stops_data else None,
+                'atco_latitude': stops_data['atco_latitude'] if stops_data else None
+            },
             # Weather metrics
             'weather': {
                 'score': weather_score,
@@ -108,6 +143,8 @@ class DataAggregator:
                 'energy': energy_score,  # TODO: calculate from multiple sources
                 'activity': traffic_score * 0.8 + weather_score * 0.2,  # TODO: calculate from transit/traffic
             }
+
+
         }
         
         self.last_data = combined_data
