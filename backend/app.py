@@ -191,6 +191,11 @@ async def get_traffic_data():
     """Get current traffic data for Gilmerton Road"""
     return await aggregator.fetch_traffic_gilmerton_road_data()
 
+@app.get("/api/traffic/leith-street")
+async def get_traffic_data():
+    """Get current traffic data for Leith Street"""
+    return await aggregator.fetch_traffic_leith_st_data()
+
 @app.get("/api/live-transport")
 async def get_live_transport_data():
     """Get live locations of all public transport vehicles"""

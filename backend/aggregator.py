@@ -4,6 +4,7 @@ Makes it easy to add new data sources
 """
 from statistics import mean
 
+from data_sources.leith_st_traffic import TrafficFetcherLeithSt
 from data_sources.gilmerton_road_traffic import TrafficFetcherGilmertonRoad
 from data_sources.lady_road_traffic import TrafficFetcherLadyRoad
 from data_sources.nicolson_st_traffic import TrafficFetcherNicolsonSt
@@ -46,6 +47,7 @@ class DataAggregator:
         self.traffic_nicolson_st = TrafficFetcherNicolsonSt(tomtom_api_key)
         self.traffic_lady_road = TrafficFetcherLadyRoad(tomtom_api_key)
         self.traffic_gilmerton_road = TrafficFetcherGilmertonRoad(tomtom_api_key)
+        self.traffic_leith_st = TrafficFetcherLeithSt(tomtom_api_key)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
@@ -189,6 +191,21 @@ class DataAggregator:
             print(f"Traffic error: {e}")
             return None
 
+    async def fetch_traffic_leith_st_data(self):
+        try:
+            data = await self.traffic_leith_st.fetch_traffic_leith_st()
+            score = self.traffic_leith_st.calculate_score(data)
+            return {
+                'score': score,
+                'current_speed': data['current_speed'],
+                'free_flow_speed': data['free_flow_speed'],
+                'road_closure': data['road_closure'],
+                'raw': data
+            }
+        except Exception as e:
+            print(f"Traffic error: {e}")
+            return None
+
     async def fetch_live_transport_data(self):
         try:
             data = await self.liveLocation.fetch_transport()
@@ -221,6 +238,7 @@ class DataAggregator:
         traffic_nicolson_st_data = await self.fetch_traffic_nicolson_st_data() or {}
         traffic_lady_road_data = await self.fetch_traffic_lady_road_data() or {}
         traffic_gilmerton_road_data = await self.fetch_traffic_gilmerton_road_data() or {}
+        traffic_leith_st_data = await self.fetch_traffic_leith_st_data() or {}
         live_transport_data = await self.fetch_live_transport_data() or {}
         stops_data = await self.fetch_stops_data() or {}
 
@@ -234,6 +252,7 @@ class DataAggregator:
                           traffic_nicolson_st_data.get('score', 50),
                           traffic_lady_road_data.get('score', 50),
                           traffic_gilmerton_road_data.get('score', 50),
+                          traffic_leith_st_data.get('score', 50)
                           ]
         traffic_score = mean(traffic_scores)
         flight_score = flight_data.get('score', 0)
@@ -251,6 +270,7 @@ class DataAggregator:
             'nicolson_st_traffic': traffic_nicolson_st_data,
             'lady_road_traffic': traffic_lady_road_data,
             'gilmerton_road_traffic': traffic_gilmerton_road_data,
+            'leith_st_traffic': traffic_leith_st_data,
             'social': {'score': 50, 'mood': 50, 'raw': None},
             'city_pulse': {
                 'mood': weather_score * 0.7 + 50 * 0.3,
