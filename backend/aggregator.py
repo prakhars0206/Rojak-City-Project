@@ -99,26 +99,18 @@ class DataAggregator:
             'timestamp': datetime.now().isoformat(),
             # Live transport data
             'live_transport': {
-                'vehicles': live_location_data['vehicle_id'] if live_location_data else 'Unknown',
-                'latitude' : live_location_data['latitude'] if live_location_data else None,
-                'longitude' : live_location_data['longitude'] if live_location_data else None,
-                'speed' : live_location_data['speed'] if live_location_data else None,
-                'destination' : live_location_data['destination'] if live_location_data else 'Unknown',
-                'journey_id' : live_location_data['journey_id'] if live_location_data else 'Unknown',
-                'vehicle_type' : live_location_data['vehicle_type'] if live_location_data else 'Unknown'
+                # Pass the entire list of vehicles as 'raw'
+                'raw': live_location_data,
+                # Add a useful summary count
+                'vehicle_count': len(live_location_data) if live_location_data else 0
             },
 
-            'stops' : {
-                'stop_id': stops_data['stop_id'] if stops_data else 'Unknown',
-                'name': stops_data['name'] if stops_data else 'Unknown',
-                'latitude': stops_data['latitude'] if stops_data else None,
-                'longitude': stops_data['longitude'] if stops_data else None,
-                'locality': stops_data['locality'] if stops_data else 'Unknown',
-                'direction': stops_data['direction'] if stops_data else 'Unknown',
-                'service_type': stops_data['service_type'] if stops_data else None,
-                'destination': stops_data['destination'] if stops_data else [],
-                'atco_longitude': stops_data['atco_longitude'] if stops_data else None,
-                'atco_latitude': stops_data['atco_latitude'] if stops_data else None
+            # --- CORRECTED: Bus stops data ---
+            'stops': {
+                # Pass the entire list of stops as 'raw'
+                'raw': stops_data,
+                # Add a useful summary count
+                'stop_count': len(stops_data) if stops_data else 0
             },
             # Weather metrics
             'weather': {
