@@ -3,6 +3,7 @@ Aggregates data from all sources into one unified format
 Makes it easy to add new data sources
 """
 
+
 from data_sources.princes_st_traffic import TrafficFetcherPrincesSt
 from data_sources.liveVehicleLocation import LiveVehicleLocationFetcher
 from data_sources.flights import FlightFetcher
