@@ -1,0 +1,373 @@
+stop_id,stop_name,service_name,destination,note_id,valid_from,day,time
+36235979,Annandale Street,14,Broughton,,1761955200,0,00:28
+36235979,Annandale Street,22,Broughton,,1761955200,7,00:32
+36235979,Annandale Street,14,Broughton,,1761955200,7,00:35
+36235979,Annandale Street,14,Broughton,,1761955200,7,00:40
+36235979,Annandale Street,11,Broughton,,1761955200,6,00:41
+36235979,Annandale Street,16,Broughton,,1761955200,6,00:43
+36235979,Annandale Street,41,Broughton,,1761955200,0,00:44
+36235979,Annandale Street,16,Broughton,,1761955200,7,00:45
+36235979,Annandale Street,11,Broughton,,1761955200,7,00:46
+36235979,Annandale Street,16,Broughton,,1761955200,0,00:47
+36235979,Annandale Street,22,Broughton,,1761955200,0,00:47
+36235979,Annandale Street,31,Broughton,,1761955200,0,00:49
+36235979,Annandale Street,31,Broughton,,1761955200,0,00:54
+36235979,Annandale Street,N37,Broughton,,1761955200,7,03:47
+36235979,Annandale Street,N11,Broughton,,1761955200,0,03:58
+36235979,Annandale Street,N14,Broughton,,1761955200,0,03:59
+36235979,Annandale Street,N25,Broughton,,1761955200,0,04:08
+36235979,Annandale Street,N14,Broughton,,1761955200,0,04:09
+36235979,Annandale Street,N37,Broughton,,1761955200,7,04:13
+36235979,Annandale Street,N26,Broughton,,1761955200,0,04:14
+36235979,Annandale Street,N37,Broughton,,1761955200,0,04:17
+36235979,Annandale Street,N16,Broughton,,1761955200,0,04:31
+36235979,Annandale Street,N25,Broughton,,1761955200,0,04:38
+36235979,Annandale Street,N37,Broughton,,1761955200,0,04:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,04:57
+36235979,Annandale Street,N3,Broughton,,1761955200,0,04:58
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,06:02
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,06:27
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,06:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,06:33
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,06:39
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,06:50
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,06:58
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,06:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,06:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,07:10
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,07:18
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,07:29
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,07:30
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,07:30
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,07:31
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,07:46
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,07:50
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,07:53
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,07:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,07:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,08:02
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,08:11
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,08:13
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,08:17
+36235979,Annandale Street,11,Broughton,,1761955200,0,08:21
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,08:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,08:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,08:29
+36235979,Annandale Street,11,Broughton,,1761955200,0,08:30
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,08:33
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,08:37
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,08:39
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,08:41
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,08:49
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,08:55
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,08:56
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,08:57
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,08:58
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:01
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,09:04
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,09:11
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:13
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,09:14
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,09:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:23
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,09:24
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,09:25
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,09:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:33
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,09:37
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,09:38
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,09:39
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:45
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,09:52
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,09:54
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,09:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,09:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,09:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,10:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,10:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,10:14
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,10:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,10:19
+36235979,Annandale Street,10,Broughton,,1761955200,0,10:22
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,10:24
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,10:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,10:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,10:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,10:39
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,10:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,10:44
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,10:52
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,10:54
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,10:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,10:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,10:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,11:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,11:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,11:14
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,11:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,11:20
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,11:24
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,11:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,11:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,11:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,11:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,11:44
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,11:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,11:52
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,11:55
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,11:58
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,11:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,12:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,12:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,12:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,12:14
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,12:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,12:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,12:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,12:28
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,12:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,12:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,12:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,12:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,12:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,12:52
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,12:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,12:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,12:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,13:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,13:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,13:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,13:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,13:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,13:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,13:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,13:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,13:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,13:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,13:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,13:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,13:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,13:52
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,13:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,13:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,13:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,14:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,14:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,14:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,14:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,14:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,14:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,14:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,14:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,14:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,14:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,14:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,14:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,14:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,14:52
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,14:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,14:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,14:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,15:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,15:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,15:12
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,15:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,15:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,15:19
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,15:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,15:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,15:29
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,15:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,15:32
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,15:34
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,15:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,15:45
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,15:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,15:52
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,15:55
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,15:57
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,15:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,15:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,16:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,16:09
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,16:11
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,16:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,16:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,16:21
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,16:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,16:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,16:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,16:29
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,16:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,16:33
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,16:41
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,16:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,16:45
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,16:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,16:52
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,16:56
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,16:57
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,16:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,16:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,17:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,17:09
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,17:11
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,17:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,17:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,17:21
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,17:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,17:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,17:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,17:29
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,17:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,17:33
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,17:41
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,17:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,17:45
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,17:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,17:52
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,17:56
+36235979,Annandale Street,15,Broughton,,1761955200,6,17:56
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,17:57
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,17:57
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,17:59
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,18:06
+36235979,Annandale Street,15,Broughton,,1761955200,0,18:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,18:08
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,18:10
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,18:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,18:12
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,18:19
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,18:25
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,18:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,18:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,18:29
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,18:29
+36235979,Annandale Street,15,Broughton,,1761955200,0,18:29
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,18:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,18:39
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,18:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,18:42
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,18:45
+36235979,Annandale Street,44,Broughton,,1761955200,7,18:45
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,18:50
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,18:51
+36235979,Annandale Street,15,Broughton,,1761955200,0,18:53
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,18:56
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,18:56
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,18:56
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,19:03
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,19:06
+36235979,Annandale Street,22,Broughton,,1761955200,6,19:07
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,19:09
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,19:10
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,19:10
+36235979,Annandale Street,16,Broughton,,1761955200,6,19:10
+36235979,Annandale Street,16,Broughton,,1761955200,0,19:15
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,19:21
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,19:21
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,19:25
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,19:26
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,19:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,6,19:35
+36235979,Annandale Street,44,Broughton,,1761955200,6,19:35
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,19:36
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,19:40
+36235979,Annandale Street,31,Broughton,,1761955200,0,19:43
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,19:44
+36235979,Annandale Street,16,Broughton,,1761955200,0,19:45
+36235979,Annandale Street,16,Broughton,,1761955200,6,19:47
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,19:49
+36235979,Annandale Street,15,Broughton,,1761955200,0,19:50
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,19:51
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,20:01
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,20:02
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,20:05
+36235979,Annandale Street,31,Broughton,,1761955200,0,20:05
+36235979,Annandale Street,41,Broughton,,1761955200,0,20:09
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,20:11
+36235979,Annandale Street,29,Broughton,,1761955200,0,20:13
+36235979,Annandale Street,14,Broughton,,1761955200,0,20:14
+36235979,Annandale Street,31,Broughton,,1761955200,0,20:15
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,20:21
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,6,20:30
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,20:30
+36235979,Annandale Street,10,Western Harbour,,1761955200,7,20:32
+36235979,Annandale Street,29,Broughton,,1761955200,7,20:32
+36235979,Annandale Street,14,Broughton,,1761955200,6,20:33
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,20:35
+36235979,Annandale Street,29,Broughton,,1761955200,6,20:35
+36235979,Annandale Street,44,Broughton,,1761955200,7,20:35
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,20:38
+36235979,Annandale Street,31,Broughton,,1761955200,0,20:39
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,20:46
+36235979,Annandale Street,31,Broughton,,1761955200,0,20:52
+36235979,Annandale Street,37,Broughton,,1761955200,0,20:54
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,21:02
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,21:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,21:08
+36235979,Annandale Street,31,Broughton,,1761955200,0,21:17
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,21:26
+36235979,Annandale Street,37,Broughton,,1761955200,0,21:26
+36235979,Annandale Street,16,Broughton,,1761955200,7,21:27
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,21:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,21:38
+36235979,Annandale Street,44,Broughton,,1761955200,7,21:38
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,21:46
+36235979,Annandale Street,31,Broughton,,1761955200,0,21:47
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,22:02
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,22:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,22:08
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,22:26
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,22:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,22:38
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,22:46
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,23:02
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,23:06
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,23:08
+36235979,Annandale Street,41,Broughton,,1761955200,7,23:14
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,23:26
+36235979,Annandale Street,29,Broughton,,1761955200,0,23:31
+36235979,Annandale Street,10,Western Harbour,,1761955200,0,23:32
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,7,23:38
+36235979,Annandale Street,41,Broughton,,1761955200,0,23:44
+36235979,Annandale Street,29,Broughton,,1761955200,7,23:45
+36235979,Annandale Street,11,Ocean Terminal,,1761955200,0,23:46
+36235979,Annandale Street,16,Broughton,,1761955200,7,23:51
+36235979,Annandale Street,31,Broughton,,1761955200,0,23:54
+36235979,Annandale Street,14,Broughton,,1761955200,0,23:55
+36235979,Annandale Street,14,Broughton,,1761955200,0,23:56
+36235979,Annandale Street,14,Broughton,,1761955200,7,23:57
+36235979,Annandale Street,14,Broughton,,1761955200,7,23:58
+36235979,Annandale Street,37,Broughton,,1761955200,0,00:00
+36235979,Annandale Street,11,Broughton,,1761955200,0,00:01
+36235979,Annandale Street,16,Broughton,,1761955200,0,00:01
+36235979,Annandale Street,29,Broughton,,1761955200,0,00:01
+36235979,Annandale Street,10,Broughton,,1761955200,0,00:02
+36235979,Annandale Street,37,Broughton,,1761955200,0,00:05
+36235979,Annandale Street,11,Broughton,,1761955200,6,00:06
+36235979,Annandale Street,7,Broughton,,1761955200,0,00:08
+36235979,Annandale Street,11,Broughton,,1761955200,7,00:08
+36235979,Annandale Street,16,Broughton,,1761955200,0,00:08
+36235979,Annandale Street,16,Broughton,,1761955200,6,00:10
+36235979,Annandale Street,7,Broughton,,1761955200,7,00:13
+36235979,Annandale Street,29,Broughton,,1761955200,0,00:14
+36235979,Annandale Street,41,Broughton,,1761955200,0,00:14
+36235979,Annandale Street,14,Broughton,,1761955200,0,00:15
+36235979,Annandale Street,29,Broughton,,1761955200,7,00:15
+36235979,Annandale Street,16,Broughton,,1761955200,7,00:17
+36235979,Annandale Street,22,Broughton,,1761955200,0,00:17
+36235979,Annandale Street,11,Broughton,,1761955200,0,00:21
+36235979,Annandale Street,16,Broughton,,1761955200,0,00:21
+36235979,Annandale Street,22,Broughton,,1761955200,7,00:22
+36235979,Annandale Street,16,Broughton,,1761955200,0,00:23
+36235979,Annandale Street,31,Broughton,,1761955200,0,00:24
+36235979,Annandale Street,16,Broughton,,1761955200,6,00:25
+36235979,Annandale Street,11,Broughton,,1761955200,6,00:26
+36235979,Annandale Street,31,Broughton,,1761955200,0,00:26
+36235979,Annandale Street,14,Broughton,,1761955200,7,00:27
+36235979,Annandale Street,10,Broughton,,1761955200,0,00:32
+36235979,Annandale Street,37,Broughton,,1761955200,0,00:35
+36235979,Annandale Street,11,Broughton,,1761955200,7,00:38
+36235979,Annandale Street,29,Broughton,,1761955200,0,00:44
+36235979,Annandale Street,29,Broughton,,1761955200,7,00:45
