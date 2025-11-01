@@ -10,7 +10,7 @@ Real-time data aggregation for Edinburgh city visualization.
 **For PowerShell:**
 cd backend
 python -m venv venv
-source venv/Scripts/activate
+venv\Scripts\activate
 pip install -r requirements.txt
 ```
 

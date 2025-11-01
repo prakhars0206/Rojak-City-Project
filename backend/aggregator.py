@@ -11,8 +11,11 @@ from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
 from datetime import datetime
 from typing import Dict, Optional
+import os
+from dotenv import load_dotenv
 
 
+load_dotenv()
 class DataAggregator:
     """Combines all data sources into unified city metrics"""
     
@@ -24,8 +27,14 @@ class DataAggregator:
         self.flights = FlightFetcher()
 
 
-        API_KEY = "yMoAyFyKAwwj4bE8OEFw3gfwhGPsBjVj"
-        self.traffic = TrafficFetcherPrincesSt(API_KEY)
+        tomtom_api_key = os.getenv("TOMTOM_API_KEY")
+
+        if not tomtom_api_key:
+            raise ValueError("TOMTOM_API_KEY not found in environment variables.")
+
+
+
+        self.traffic = TrafficFetcherPrincesSt(tomtom_api_key)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
@@ -36,140 +45,119 @@ class DataAggregator:
         
         self.last_data = None
     
-    async def fetch_all_data(self) -> Dict:
-        """
-        Fetch from all data sources and combine
-        Returns unified data structure for frontend
-        """
-        # Fetch live vehicle locations
+    async def fetch_weather_data(self):
         try:
-            live_location_data = await self.liveLocation.fetch_transport()
-        except Exception as e:
-            print(f"Live location error: {e}")
-            live_location_data = None
-
-        # Fetch bus stops
-        try:
-            stops_data = await self.stops.fetch_stops()
-        except Exception as e:
-            print(f"Bus stops error: {e}")
-            stops_data = None
-        
-        # Fetch weather (you have this working!)
-        try:
-            weather_data = await self.weather.fetch_weather()
-            weather_score = self.weather.calculate_score(weather_data)
+            data = await self.weather.fetch_weather()
+            score = self.weather.calculate_score(data)
+            return {
+                'score': score,
+                'temperature': data['temperature'],
+                'description': data['description'],
+                'raw': data
+            }
         except Exception as e:
             print(f"Weather error: {e}")
-            weather_data = None
-            weather_score = 50  # default
+            return None
 
+    async def fetch_energy_data(self):
         try:
-            energy_data = await self.energy.fetch()
-            energy_score = self.energy.calculate_score(energy_data)
+            data = await self.energy.fetch()
+            score = self.energy.calculate_score(data)
+            return {
+                'score': score,
+                'carbon_intensity': data['carbon_intensity'],
+                'dominant_fuel': data['dominant_fuel'],
+                'raw': data
+            }
         except Exception as e:
             print(f"Energy error: {e}")
-            energy_data = None
-            energy_score = 50 # default
+            return None
 
+    async def fetch_flight_data(self):
         try:
-            flight_data = await self.flights.fetch()
-            flight_score = self.flights.calculate_score(flight_data)
+            data = await self.flights.fetch()
+            score = self.flights.calculate_score(data)
+            return {
+                'score': score,
+                'arriving_count': len(data['arriving']),
+                'departing_count': len(data['departing']),
+                'total_in_air': data['total_in_air'],
+                'raw': data
+            }
         except Exception as e:
             print(f"Flight error: {e}")
-            flight_data = None
-            flight_score = 0 # Default to no activity
+            return None
 
-
-
-        # Fetch traffic
+    async def fetch_traffic_data(self):
         try:
-            traffic_data = await self.traffic.fetch_traffic_princes_st()
-            traffic_score = self.traffic.calculate_score(traffic_data)
+            data = await self.traffic.fetch_traffic_princes_st()
+            score = self.traffic.calculate_score(data)
+            return {
+                'score': score,
+                'current_speed': data['current_speed'],
+                'free_flow_speed': data['free_flow_speed'],
+                'road_closure': data['road_closure'],
+                'raw': data
+            }
         except Exception as e:
             print(f"Traffic error: {e}")
-            traffic_data = None
-            traffic_score = 50  # fallback value
+            return None
 
-        # TODO: Add more sources here as you build them
-        # social_data = await self.social.fetch()
-        
-        # Combine everything into one object
+    async def fetch_live_transport_data(self):
+        try:
+            data = await self.liveLocation.fetch_transport()
+            return {
+                'raw': data,
+                'vehicle_count': len(data) if data else 0
+            }
+        except Exception as e:
+            print(f"Live location error: {e}")
+            return None
+
+    async def fetch_stops_data(self):
+        try:
+            data = await self.stops.fetch_stops()
+            return {
+                'raw': data,
+                'stop_count': len(data) if data else 0
+            }
+        except Exception as e:
+            print(f"Bus stops error: {e}")
+            return None
+
+    async def fetch_all_data(self) -> Dict:
+        weather_data = await self.fetch_weather_data() or {}
+        energy_data = await self.fetch_energy_data() or {}
+        flight_data = await self.fetch_flight_data() or {}
+        traffic_data = await self.fetch_traffic_data() or {}
+        live_transport_data = await self.fetch_live_transport_data() or {}
+        stops_data = await self.fetch_stops_data() or {}
+
+        # Get scores for city_pulse calculation, with fallbacks
+        weather_score = weather_data.get('score', 50)
+        energy_score = energy_data.get('score', 50)
+        traffic_score = traffic_data.get('score', 50)
+        flight_score = flight_data.get('score', 0)
+
         combined_data = {
             'timestamp': datetime.now().isoformat(),
-            # Live transport data
-            'live_transport': {
-                'vehicles': live_location_data['vehicle_id'] if live_location_data else 'Unknown',
-                'latitude' : live_location_data['latitude'] if live_location_data else None,
-                'longitude' : live_location_data['longitude'] if live_location_data else None,
-                'speed' : live_location_data['speed'] if live_location_data else None,
-                'destination' : live_location_data['destination'] if live_location_data else 'Unknown',
-                'journey_id' : live_location_data['journey_id'] if live_location_data else 'Unknown',
-                'vehicle_type' : live_location_data['vehicle_type'] if live_location_data else 'Unknown'
-            },
-
-            'stops' : {
-                'stop_id': stops_data['stop_id'] if stops_data else 'Unknown',
-                'name': stops_data['name'] if stops_data else 'Unknown',
-                'latitude': stops_data['latitude'] if stops_data else None,
-                'longitude': stops_data['longitude'] if stops_data else None,
-                'locality': stops_data['locality'] if stops_data else 'Unknown',
-                'direction': stops_data['direction'] if stops_data else 'Unknown',
-                'service_type': stops_data['service_type'] if stops_data else None,
-                'destination': stops_data['destination'] if stops_data else [],
-                'atco_longitude': stops_data['atco_longitude'] if stops_data else None,
-                'atco_latitude': stops_data['atco_latitude'] if stops_data else None
-            },
-            # Weather metrics
-            'weather': {
-                'score': weather_score,
-                'temperature': weather_data['temperature'] if weather_data else None,
-                'description': weather_data['description'] if weather_data else 'Unknown',
-                'raw': weather_data
-            },
-            'energy': {
-                'score': energy_score,
-                'carbon_intensity': energy_data['carbon_intensity'] if energy_data else None,
-                'dominant_fuel': energy_data['dominant_fuel'] if energy_data else 'Unknown',
-                'raw': energy_data
-            },
-
-            'flights': {
-                'score': flight_score,
-                'arriving_count': len(flight_data['arriving']) if flight_data else 0,
-                'departing_count': len(flight_data['departing']) if flight_data else 0,
-                'total_in_air': flight_data['total_in_air'] if flight_data else 0,
-                'raw': flight_data
-            },
-            
-
-            'traffic': {
-                'score': traffic_score,
-                'current_speed': traffic_data['current_speed'] if traffic_data else None,
-                'free_flow_speed': traffic_data['free_flow_speed'] if traffic_data else None,
-                'road_closure': traffic_data['road_closure'] if traffic_data else None,
-                'raw': traffic_data
-            },
-
-            # Placeholder for future sources
-            'social': {
-                'score': 50,  # TODO: real data
-                'mood': 50,
-                'raw': None
-            },
-            
-            # Overall city metrics (for your visualization)
+            'live_transport': live_transport_data,
+            'stops': stops_data,
+            'weather': weather_data,
+            'energy': energy_data,
+            'flights': flight_data,
+            'princes_street_traffic': traffic_data,
+            'social': {'score': 50, 'mood': 50, 'raw': None},
             'city_pulse': {
-                'mood': weather_score * 0.7 + 50 * 0.3,  # Weather affects mood
-                'energy': energy_score,  # TODO: calculate from multiple sources
-                'activity': traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,  # TODO: calculate from transit/traffic
+                'mood': weather_score * 0.7 + 50 * 0.3,
+                'energy': energy_score,
+                'activity': traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,
             }
-
-
         }
         
         self.last_data = combined_data
         return combined_data
+
     
     def get_last_data(self) -> Optional[Dict]:
         """Get cached data (for when frontend first connects)"""

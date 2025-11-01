@@ -146,6 +146,36 @@ async def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
+@app.get("/api/weather")
+async def get_weather_data():
+    """Get current weather data"""
+    return await aggregator.fetch_weather_data()
+
+@app.get("/api/energy")
+async def get_energy_data():
+    """Get current energy grid data"""
+    return await aggregator.fetch_energy_data()
+
+@app.get("/api/flights")
+async def get_flight_data():
+    """Get current flight data for Edinburgh Airport"""
+    return await aggregator.fetch_flight_data()
+
+@app.get("/api/traffic/princes-street")
+async def get_traffic_data():
+    """Get current traffic data for Princes Street"""
+    return await aggregator.fetch_traffic_data()
+
+@app.get("/api/live-transport")
+async def get_live_transport_data():
+    """Get live locations of all public transport vehicles"""
+    return await aggregator.fetch_live_transport_data()
+
+@app.get("/api/stops")
+async def get_stops_data():
+    """Get all bus/tram stop information"""
+    return await aggregator.fetch_stops_data()
+
 
 # ==================== WEBSOCKET (Real-time Updates) ====================
 
