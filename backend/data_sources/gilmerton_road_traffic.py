@@ -14,8 +14,8 @@ class TrafficFetcherGilmertonRoad:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
-        self.lat = 55.9080246456333
-        self.lon = -3.1357579770630113
+        self.lat = 55.908025
+        self.lon = -3.135758
 
 
     async def fetch_traffic_gilmerton_road(self):

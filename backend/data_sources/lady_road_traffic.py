@@ -14,8 +14,8 @@ class TrafficFetcherLadyRoad:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
-        self.lat = 55.92822555522985
-        self.lon = -3.164388515317342
+        self.lat = 55.928226
+        self.lon = -3.164389
 
     async def fetch_traffic_lady_road(self):
         """Fetch current traffic data from TomTom API"""

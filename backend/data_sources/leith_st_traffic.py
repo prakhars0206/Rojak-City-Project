@@ -8,16 +8,16 @@ import asyncio
 from datetime import datetime
 
 
-class TrafficFetcherNicolsonSt:
-    """Fetches real-time traffic data for Nicolson Street"""
+class TrafficFetcherLeithSt:
+    """Fetches real-time traffic data for Leith Street"""
 
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
-        self.lat = 55.945583
-        self.lon = -3.184625
+        self.lat = 55.955079
+        self.lon = -3.187019
 
-    async def fetch_traffic_nicolson_st(self):
+    async def fetch_traffic_leith_st(self):
         """Fetch current traffic data from TomTom API"""
         params = {
             "point": f"{self.lat},{self.lon}",
@@ -60,14 +60,14 @@ class TrafficFetcherNicolsonSt:
 
 
 async def main():
-    print("🚦 Nicolson Street Traffic Test")
+    print("🚦 Leith Street Traffic Test")
     print("=" * 50)
 
     API_KEY = "yMoAyFyKAwwj4bE8OEFw3gfwhGPsBjVj"  # Replace with your own key
-    fetcher = TrafficFetcherNicolsonSt(API_KEY)
+    fetcher = TrafficFetcherLeithSt(API_KEY)
 
     print("🔄 Fetching real-time traffic data...")
-    traffic = await fetcher.fetch_traffic_nicolson_st()
+    traffic = await fetcher.fetch_traffic_leith_st()
     score = fetcher.calculate_score(traffic)
 
     print("\n✅ Success!\n")
