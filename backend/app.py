@@ -186,6 +186,11 @@ async def get_traffic_data():
     """Get current traffic data for Lady Road"""
     return await aggregator.fetch_traffic_lady_road_data()
 
+@app.get("/api/traffic/gilmerton-road")
+async def get_traffic_data():
+    """Get current traffic data for Gilmerton Road"""
+    return await aggregator.fetch_traffic_gilmerton_road_data()
+
 @app.get("/api/live-transport")
 async def get_live_transport_data():
     """Get live locations of all public transport vehicles"""
