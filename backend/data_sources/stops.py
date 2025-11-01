@@ -16,8 +16,6 @@ class BusStopFetcher:
 
             for vehicle in data.get("stops", []):
                 destination = vehicle.get("destination", [])
-                if not destination:
-                    continue
                 stop_id = vehicle.get("stop_id")
                 atco_code = vehicle.get("atco_code")
                 name = vehicle.get("name")
