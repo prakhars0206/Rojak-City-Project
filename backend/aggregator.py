@@ -11,8 +11,11 @@ from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
 from datetime import datetime
 from typing import Dict, Optional
+import os
+from dotenv import load_dotenv
 
 
+load_dotenv()
 class DataAggregator:
     """Combines all data sources into unified city metrics"""
     
@@ -24,8 +27,14 @@ class DataAggregator:
         self.flights = FlightFetcher()
 
 
-        API_KEY = "yMoAyFyKAwwj4bE8OEFw3gfwhGPsBjVj"
-        self.traffic = TrafficFetcherPrincesSt(API_KEY)
+        tomtom_api_key = os.getenv("TOMTOM_API_KEY")
+
+        if not tomtom_api_key:
+            raise ValueError("TOMTOM_API_KEY not found in environment variables.")
+
+
+
+        self.traffic = TrafficFetcherPrincesSt(tomtom_api_key)
 
         self.liveLocation = LiveVehicleLocationFetcher()
         self.stops = BusStopFetcher()
