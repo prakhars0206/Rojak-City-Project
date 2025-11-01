@@ -171,6 +171,11 @@ async def get_traffic_data():
     """Get current traffic data for Edinburgh Airport"""
     return await aggregator.fetch_traffic_edi_airport_data()
 
+@app.get("/api/traffic/portobello-high-street")
+async def get_traffic_data():
+    """Get current traffic data for Portobello High Street"""
+    return await aggregator.fetch_traffic_portobello_high_st_data()
+
 @app.get("/api/live-transport")
 async def get_live_transport_data():
     """Get live locations of all public transport vehicles"""
