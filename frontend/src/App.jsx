@@ -124,11 +124,7 @@ function App() {
 
   const togglePause = () => setIsPaused((p) => !p);
 
-  const [selectedPredictionStreet, setSelectedPredictionStreet] = useState('princes-street');
-  const selectedPredictionKey = streets.find((s) => s.id === selectedPredictionStreet)?.key;
-  const selectedPrediction = predictions.find(
-    (p) => p?.validation_data?.location_key === selectedPredictionKey
-  );
+  // predictions state contains active prediction objects from backend
 
   /* ---------- Optimized Tilt Effect (GPU-only, no lag) ---------- */
   const heartRef = useRef();
@@ -251,29 +247,65 @@ function App() {
           </h2>
           {lastUpdate && <p className="text-xs text-gray-500 mb-3">Last update: {lastUpdate}</p>}
           <div className="flex flex-col gap-3">
-            <DataFlowCard
-              vessel="Edinburgh Weather"
-              dataType="Current Conditions"
-              loading={loading}
-              value={weatherData?.temperature}
-              unit="°C"
-              description={weatherData?.description || 'N/A'}
-              icon={
-                weatherData?.description?.toLowerCase().includes('cloud') ? WiCloud : WiDaySunny
-              }
-              type="weather"
-            />
-            <DataFlowCard
-              vessel="Carbon Intensity"
-              dataType="Energy Status"
-              loading={loading}
-              value={energyData?.carbon_intensity}
-              unit="gCO2/kWh"
-              description={`Score: ${Math.round(energyData?.score || 0)}/100`}
-              score={energyData?.score}
-              icon={GiLightningArc}
-              type="energy"
-            />
+            {/* 2x2 stat grid: Temperature, Wind Speed, Feels Like, Carbon Intensity */}
+            <div className="grid grid-cols-2 gap-2">
+              <DataFlowCard
+                vessel="Temp."
+                dataType="Edinburgh"
+                loading={loading}
+                value={weatherData?.temperature}
+                unit="°C"
+                description={weatherData?.description || 'N/A'}
+                icon={weatherData?.description?.toLowerCase().includes('cloud') ? WiCloud : WiDaySunny}
+                type="weather"
+              />
+
+              <DataFlowCard
+                vessel="Wind Speed"
+                dataType="Wind"
+                loading={loading}
+                // backend embeds raw weather under weather.raw — prefer top-level then raw then nested
+                value={
+                  weatherData?.wind_speed ?? weatherData?.raw?.wind_speed ?? weatherData?.wind?.speed ?? undefined
+                }
+                unit="km/h"
+                description={
+                  weatherData?.raw?.wind_direction
+                    ? `Dir: ${weatherData.raw.wind_direction}`
+                    : weatherData?.wind?.direction
+                    ? `Dir: ${weatherData.wind.direction}`
+                    : ''
+                }
+                icon={GiSunCloud}
+                type="weather"
+              />
+
+              <DataFlowCard
+                vessel="Feels Like"
+                dataType="Apparent Temp"
+                loading={loading}
+                // prefer aggregated feels_like, then raw.apparent_temperature / raw.feels_like
+                value={
+                  weatherData?.feels_like ?? weatherData?.raw?.feels_like ?? weatherData?.apparent_temperature ?? weatherData?.raw?.apparent_temperature
+                }
+                unit="°C"
+                description={weatherData?.description || ''}
+                icon={WiCloud}
+                type="weather"
+              />
+
+              <DataFlowCard
+                vessel="Carbon Intensity"
+                dataType="Heart Pulse"
+                loading={loading}
+                value={energyData?.carbon_intensity}
+                unit="gCO2/kWh"
+                description={`Score: ${Math.round(energyData?.score || 0)}/100`}
+                score={energyData?.score}
+                icon={GiLightningArc}
+                type="energy"
+              />
+            </div>
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
               <label className="text-xs text-gray-400 block mb-2">Select Street:</label>
               <select
@@ -319,41 +351,39 @@ function App() {
         {/* RIGHT PANEL */}
         <div className="w-1/4 border-l border-gray-800 flex flex-col overflow-y-auto p-4 panel fade-in">
           <h2 className="text-lg font-bold text-gray-200 mb-3 sticky top-0 bg-black pb-2">
-            Predictions
+            Traffic Congestion Predictions
           </h2>
           <div className="flex flex-col gap-3">
-            <DataFlowCard vessel="Weather" dataType="Heart Colour" icon={GiSunCloud} />
-            <DataFlowCard vessel="Energy" dataType="Pulse" icon={GiLightningArc} />
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-              <label className="text-xs text-gray-400 block mb-2">
-                Select Street for Predictions:
-              </label>
-              <select
-                value={selectedPredictionStreet}
-                onChange={(e) => setSelectedPredictionStreet(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
-              >
-                {streets.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              <DataFlowCard
-                vessel="Congestion Prediction"
-                dataType={streets.find((s) => s.id === selectedPredictionStreet)?.name || 'Street'}
-                loading={loading}
-                description={
-                  selectedPrediction
-                    ? `${selectedPrediction.severity} — Confidence ${selectedPrediction.confidence}%`
-                    : 'No active predictions'
-                }
-                icon={GiTrafficCone}
-                value={selectedPrediction?.severity}
-                score={selectedPrediction?.severity}
-                unit="%"
-                type="trafficPrediction"
-              />
+              <p className="text-xs text-gray-400 mb-2">Active Predictions</p>
+              {/* 2x4 grid (2 columns x 4 rows = 8 slots) */}
+              <div className="grid grid-cols-2 gap-2">
+                {(!predictions || predictions.length === 0) ? (
+                  <div className="col-span-2 border border-gray-700 bg-gray-800 rounded-lg p-3 flex flex-col justify-center items-start">
+                    <h3 className="font-semibold text-gray-400">No prediction</h3>
+                    <p className="text-xs text-gray-500">No active predictions at the moment</p>
+                  </div>
+                ) : (
+                  predictions.slice(0, 8).map((pred) => {
+                    const locationKey = pred?.validation_data?.location_key;
+                    const locationName = streets.find((s) => s.key === locationKey)?.name || locationKey;
+                    return (
+                      <DataFlowCard
+                        key={pred.id}
+                        vessel={pred.prediction_text}
+                        dataType={locationName}
+                        loading={loading}
+                        description={`Severity: ${pred.severity} • Expires: ${new Date(pred.validate_at).toLocaleTimeString()}`}
+                        icon={GiTrafficCone}
+                        value={pred.confidence}
+                        score={pred.severity}
+                        unit="%"
+                        type="trafficPrediction"
+                      />
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -387,9 +417,9 @@ function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, valu
       return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
     if (type === 'trafficPrediction') {
-      if (score === 'Major')
-        return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
       if (score === 'Minor')
+        return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      if (score === 'Major')
         return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
       return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
@@ -403,7 +433,21 @@ function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, valu
     >
       <div className="flex items-center gap-2 mb-1">
         {Icon && <Icon className={`text-xl ${colors.text}`} />}
-        <h3 className={`font-semibold ${colors.text}`}>{vessel}</h3>
+        {/* Clamp title to two lines and show full text on hover via title attribute */}
+        <h3
+          className={`font-semibold ${colors.text}`}
+          title={typeof vessel === 'string' ? vessel : ''}
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            wordBreak: 'break-word'
+          }}
+        >
+          {vessel}
+        </h3>
       </div>
       <p className="text-xs text-gray-500 mb-1">{dataType}</p>
       <p className={`text-lg font-bold ${colors.text}`}>
