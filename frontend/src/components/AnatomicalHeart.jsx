@@ -181,6 +181,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
       },
       {
         name: "Edinburgh Airport",
+        dataKey: "airport",
         pathIndex: 3,
         t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
@@ -438,9 +439,14 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                     fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  Score: {(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Score: {(
+                    liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—"
+                  )}
+                  
+                  &nbsp;|&nbsp;
+                  
                   Speed: {(
-                    Number(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
+                    Number(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
                   )}{" "}
                   km/h
                 </div>
