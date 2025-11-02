@@ -159,9 +159,9 @@ export function useCityData() {
   function getWeatherColor(description = "") {
     const d = String(description).toLowerCase();
 
-    if (d.includes("clear sky") || d.includes("mainly clear")) return "#37c6faff";
+    if (d.includes("clear sky") || d.includes("mainly clear")) return "#cca010ff";
     if (d.includes("partly")) return "#ecc67a";
-    if (d.includes("overcast")) return "#4a595b";
+    if (d.includes("overcast")) return "#376970ff";
     if (d.includes("fog")) return "#7e7d7d";
     if (d.includes("rain")) return "#6c7ca4";
     if (d.includes("snow")) return "#ffffff";

@@ -27,7 +27,7 @@ const getWeatherColor = (description) => {
   
   if (d.includes("clear") || d.includes("sunny")) return "#f1a11fff";
   if (d.includes("partly") || d.includes("partial")) return "#ecc67a";
-  if (d.includes("overcast") || d.includes("cloudy")) return "#4a595b";
+  if (d.includes("overcast") || d.includes("cloudy")) return "#78afb7ff";
   if (d.includes("fog") || d.includes("mist")) return "#7e7d7d";
   if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return "#6c7ca4";
   if (d.includes("snow") || d.includes("sleet")) return "#ffffff";

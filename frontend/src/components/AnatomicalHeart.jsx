@@ -11,12 +11,12 @@ function HeartRateMonitor({ bpm }) {
   const bpmRef = useRef(bpm);
   const maxDataPoints = 40;
   useEffect(() => {
-    console.log("🩺 HeartRateMonitor received BPM:", bpm);
+    console.log("HeartRateMonitor received BPM:", bpm);
   }, [bpm]);
 
   useEffect(() => {
     bpmRef.current = bpm;
-    console.log("🔄 Updated bpmRef to:", bpm);
+    console.log(" Updated bpmRef to:", bpm);
   }, [bpm]);
 
   useEffect(() => {
@@ -25,15 +25,15 @@ function HeartRateMonitor({ bpm }) {
       bpmHistory.length > 0
         ? bpmHistory[bpmHistory.length - 1].bpm
         : bpm || 72;
-      console.log("🎯 Attempting to record BPM, current value:", currentBpm);
+      console.log("Attempting to record BPM, current value:", currentBpm);
 
       if (!currentBpm || typeof currentBpm !== 'number' || currentBpm <= 0) {
-        console.warn("⚠️ Invalid BPM value, skipping record:", currentBpm);
+        console.warn("Invalid BPM value, skipping record:", currentBpm);
         return;
       }
       
       const now = Date.now();
-      console.log(`📊 Recording BPM: ${currentBpm} at ${new Date(now).toLocaleTimeString()}`);
+      console.log(`Recording BPM: ${currentBpm} at ${new Date(now).toLocaleTimeString()}`);
       
       setBpmHistory(prev => {
         const newHistory = [...prev, { bpm: currentBpm, timestamp: now }];
@@ -45,13 +45,13 @@ function HeartRateMonitor({ bpm }) {
       });
     };
 
-    console.log("🚀 Starting heart rate monitor...");
+    console.log("Starting heart rate monitor...");
     recordBPM();
     
     const interval = setInterval(recordBPM, 15000);
     
     return () => {
-      console.log("🛑 Stopping heart rate monitor");
+      console.log("Stopping heart rate monitor");
       clearInterval(interval);
     };
   }, []);
@@ -260,7 +260,7 @@ function useTrafficData() {
       const speed = Number(data?.current_speed ?? 10);
       return { score, speed, raw: data };
     } catch (err) {
-      console.error(`❌ Failed to fetch ${name} traffic`, err);
+      console.error(`Failed to fetch ${name} traffic`, err);
       return { score: 50, speed: 10 };
     }
   }
@@ -273,7 +273,7 @@ function useTrafficData() {
       const busCount = data?.raw?.filter?.((v) => v.vehicle_type === "bus")?.length ?? 0;
       setTransportData({ busCount, raw: data.raw });
     } catch (err) {
-      console.warn("⚠️ Could not fetch transport data:", err);
+      console.warn("Could not fetch transport data:", err);
       setTransportData({ busCount: 0 });
     }
   }
@@ -664,7 +664,7 @@ function Heart({ metrics, trafficData, transportData, onBpmChange }) {
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
   useEffect(() => {
-    console.log("💓 Heart received metrics:", {
+    console.log("Heart received metrics:", {
       weatherColor: metrics?.weatherColor,
       weather: metrics?.weather,
       bpm: metrics?.bpm,
@@ -672,9 +672,8 @@ function Heart({ metrics, trafficData, transportData, onBpmChange }) {
     });
   }, [metrics]);
 
-  // Add this new useEffect to specifically track weatherColor changes
   useEffect(() => {
-    console.log("🌈 Weather color update:", metrics?.weatherColor);
+    console.log("Weather color update:", metrics?.weatherColor);
   }, [metrics?.weatherColor]);
 
   const mergedMesh = useMemo(() => {
@@ -734,15 +733,13 @@ function Heart({ metrics, trafficData, transportData, onBpmChange }) {
     const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
     group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
 
-    // Update wireframe color with debug logging
     if (wireMat && metrics?.weatherColor) {
       const colorStr = metrics.weatherColor;
       const targetColor = new THREE.Color(colorStr.slice(0, 7));
       wireMat.color.lerp(targetColor, 0.1);
-      
-      // Log every 60 frames (approximately once per second)
+
       if (Math.floor(t * 60) % 60 === 0) {
-        console.log("🎨 Current wire color:", wireMat.color.getHexString(), "Target:", targetColor.getHexString());
+        console.log("Current wire color:", wireMat.color.getHexString(), "Target:", targetColor.getHexString());
       }
     }
 
@@ -771,7 +768,7 @@ export default function AnatomicalHeart({ metrics }) {
 
 
   useEffect(() => {
-    console.log("🔍 AnatomicalHeart received metrics:", metrics);
+    console.log("AnatomicalHeart received metrics:", metrics);
   }, [metrics]);
 
   return (

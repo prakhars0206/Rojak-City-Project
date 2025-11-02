@@ -10,10 +10,10 @@ export function useTrafficData() {
 
   async function fetchTraffic(name, url) {
     try {
-      console.log(`🌐 Fetching traffic for ${name} → ${url}`);
+      console.log(`Fetching traffic for ${name} → ${url}`);
       const res = await fetch(url, { cache: "no-cache" });
       if (!res.ok) {
-        console.warn(`⚠️ ${name} returned status ${res.status}`);
+        console.warn(`${name} returned status ${res.status}`);
         return { score: 50, speed: 10 };
       }
 
@@ -22,14 +22,14 @@ export function useTrafficData() {
       const speed = Number(data?.current_speed ?? 10);
       return { score, speed, raw: data };
     } catch (err) {
-      console.error(`❌ Failed to fetch ${name} traffic`, err);
+      console.error(`Failed to fetch ${name} traffic`, err);
       return { score: 50, speed: 10 };
     }
   }
 
   async function fetchLiveTransport() {
     try {
-      console.log("🚍 Fetching live transport...");
+      console.log("Fetching live transport...");
       const res = await fetch("http://localhost:8000/api/live-transport", { cache: "no-cache" });
       const data = await res.json();
       const buses = (data?.raw || []).filter((v) => v.vehicle_type === "bus");
@@ -38,7 +38,7 @@ export function useTrafficData() {
         raw: buses,
       });
     } catch (err) {
-      console.error("❌ Failed to fetch live transport", err);
+      console.error("Failed to fetch live transport", err);
       setTransportData({ busCount: 0, raw: [] });
     }
   }
