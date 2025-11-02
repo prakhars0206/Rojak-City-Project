@@ -8,6 +8,29 @@ import { FaPause, FaPlay } from 'react-icons/fa';
 
 const MemoizedHeart = memo(AnatomicalHeart);
 
+// Helper function to calculate BPM from carbon intensity
+const calculateBPMFromCarbon = (carbonIntensity) => {
+  if (!carbonIntensity) return 72;
+  if (carbonIntensity < 100) return 60 + (carbonIntensity / 100) * 5;
+  if (carbonIntensity < 200) return 75 + ((carbonIntensity - 100) / 100) * 10;
+  if (carbonIntensity < 300) return 85 + ((carbonIntensity - 200) / 100) * 15;
+  if (carbonIntensity < 400) return 100 + ((carbonIntensity - 300) / 100) * 20;
+  return 120 + Math.min((carbonIntensity - 400) / 100, 1) * 20;
+};
+
+// Helper function to get weather color
+const getWeatherColor = (description = "") => {
+  const d = String(description).toLowerCase();
+  if (d.includes("clear sky") || d.includes("mainly clear")) return "#dfb96b";
+  if (d.includes("partly")) return "#ecc67a";
+  if (d.includes("overcast")) return "#4a595b";
+  if (d.includes("fog")) return "#7e7d7d";
+  if (d.includes("rain")) return "#6c7ca4";
+  if (d.includes("snow")) return "#ffffff";
+  if (d.includes("thunder")) return "#6633cc";
+  return "#734d4d";
+};
+
 function App() {
   const [weatherData, setWeatherData] = useState(null);
   const [energyData, setEnergyData] = useState(null);
@@ -125,8 +148,6 @@ function App() {
 
   const togglePause = () => setIsPaused((p) => !p);
 
-  // predictions state contains active prediction objects from backend
-
   /* ---------- Optimized Tilt Effect (GPU-only, no lag) ---------- */
   const heartRef = useRef();
   useEffect(() => {
@@ -167,6 +188,19 @@ function App() {
       cancelAnimationFrame(raf);
     };
   }, []);
+
+  // Create metrics object from state for the heart
+  const metrics = {
+    bpm: calculateBPMFromCarbon(energyData?.carbon_intensity || 0),
+    weatherColor: getWeatherColor(weatherData?.description),
+    weather: weatherData,
+    traffic: trafficData?.score ? trafficData.score / 100 : 0.5,
+    activity: 0.5,
+    mood: 0,
+    circulation: energyData?.score ? energyData.score / 100 : 0.5,
+    social: 0.3,
+    energy: energyData?.score ? energyData.score / 100 : 0.2,
+  };
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden flex flex-col fade-in">
@@ -265,7 +299,6 @@ function App() {
                 vessel="Wind Speed"
                 dataType="Wind"
                 loading={loading}
-                // backend embeds raw weather under weather.raw — prefer top-level then raw then nested
                 value={
                   weatherData?.wind_speed ?? weatherData?.raw?.wind_speed ?? weatherData?.wind?.speed ?? undefined
                 }
@@ -285,7 +318,6 @@ function App() {
                 vessel="Feels Like"
                 dataType="Apparent Temp"
                 loading={loading}
-                // prefer aggregated feels_like, then raw.apparent_temperature / raw.feels_like
                 value={
                   weatherData?.feels_like ?? weatherData?.raw?.feels_like ?? weatherData?.apparent_temperature ?? weatherData?.raw?.apparent_temperature
                 }
@@ -344,7 +376,7 @@ function App() {
           <p className="text-gray-400 text-xs mb-2">Drag to rotate</p>
           <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden w-full h-full">
             <div ref={heartRef} className="heart-stage w-full h-full">
-              <MemoizedHeart isPaused={isPaused} />
+              <MemoizedHeart isPaused={isPaused} metrics={metrics} />
             </div>
           </div>
         </div>
@@ -434,7 +466,6 @@ function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, valu
     >
       <div className="flex items-center gap-2 mb-1">
         {Icon && <Icon className={`text-xl ${colors.text}`} />}
-        {/* Clamp title to two lines and show full text on hover via title attribute */}
         <h3
           className={`font-semibold ${colors.text}`}
           title={typeof vessel === 'string' ? vessel : ''}
