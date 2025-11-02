@@ -23,6 +23,7 @@ function App() {
 
   const streets = [
     { id: 'princes-street', name: 'Princes Street', key: 'princes_street_traffic' },
+    { id: 'leith-street', name: 'Leith Street', key: 'leith_st_traffic' },
     { id: 'edinburgh-airport', name: 'Edinburgh Airport', key: 'edinburgh_airport_traffic' },
     { id: 'portobello-high-street', name: 'Portobello High Street', key: 'portobello_high_street_traffic' },
     { id: 'nicolson-street', name: 'Nicolson Street', key: 'nicolson_street_traffic' },
@@ -250,7 +251,7 @@ function App() {
             {/* 2x2 stat grid: Temperature, Wind Speed, Feels Like, Carbon Intensity */}
             <div className="grid grid-cols-2 gap-2">
               <DataFlowCard
-                vessel="Temp."
+                vessel="Weather"
                 dataType="Edinburgh"
                 loading={loading}
                 value={weatherData?.temperature}
