@@ -100,7 +100,6 @@ function useTrafficData() {
   return { trafficData, transportData };
 }
 
-
 /* -----------------------
    Helpers
 ----------------------- */
@@ -122,11 +121,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     if (!origPaths.length) return [];
     return origPaths.map((p) => resampleCurvePoints(p, 64));
   }, [origPaths]);
-
-  useEffect(() => {
-    console.log("Live traffic data received:", liveTraffic);
-    console.log("Transport data received:", transportData);
-  }, [liveTraffic, transportData]);
 
   /* ---- Anchors (live traffic) ---- */
   const anchors = useMemo(
@@ -181,6 +175,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
       },
       {
         name: "Edinburgh Airport",
+        datakey: "airport",
         pathIndex: 3,
         t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
@@ -223,8 +218,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
   const branches = useMemo(() => {
     // Calculate bus multiplier (more buses = more particles)
     const busCount = transportData?.busCount ?? 0;
-    const avgBusCount = 50; // Expected average bus count
-    const busMultiplier = Math.max(0.25, Math.min(1.8, busCount / avgBusCount));
+    const avgBusCount = 150; // Expected average bus count
+    const busMultiplier = Math.max(0.25, Math.min(1, busCount / avgBusCount));
     
     console.log(`🚍 Bus count: ${busCount}, particle multiplier: ${busMultiplier.toFixed(2)}x`);
     
@@ -265,7 +260,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
         dir: i % 2 === 0 ? 1 : -1,
       };
     });
-  }, [paths, liveTraffic, transportData]); // Added transportData to dependencies
+  }, [paths, liveTraffic, transportData]);
 
   /* ---- Particle buffers ---- */
   const totalParticles = useMemo(() => branches.reduce((s, b) => s + b.count, 0), [branches]);
@@ -437,9 +432,9 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                     fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  Score: {(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Score: {(liveTraffic?.[a.datakey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
                   Speed: {(
-                    Number(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
+                    Number(liveTraffic?.[a.datakey || a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
                   )}{" "}
                   km/h
                 </div>
@@ -475,6 +470,16 @@ function Heart({ metrics, trafficData, transportData }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
+  // Debug logging
+  useEffect(() => {
+    console.log("💓 Heart received metrics:", {
+      weatherColor: metrics?.weatherColor,
+      weather: metrics?.weather,
+      bpm: metrics?.bpm,
+      fullMetrics: metrics
+    });
+  }, [metrics]);
+
   const mergedMesh = useMemo(() => {
     if (!scene) return null;
     const geoms = [];
@@ -494,10 +499,12 @@ function Heart({ metrics, trafficData, transportData }) {
   if (!mergedMesh) return null;
 
   const wireGeometry = useMemo(() => new THREE.WireframeGeometry(mergedMesh.geometry), [mergedMesh]);
+  
+  // Initialize with clear sky color instead of white
   const wireMat = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: 0xffffff,
+        color: new THREE.Color("#dfb96b"), // Default to clear sky color
         transparent: true,
         opacity: 0.12,
         blending: THREE.AdditiveBlending,
@@ -507,13 +514,20 @@ function Heart({ metrics, trafficData, transportData }) {
 
   useFrame(({ clock }) => {
     if (!group.current) return;
+    
+    // Pulse animation
     const t = clock.elapsedTime;
     const bpm = metrics?.bpm ?? 72;
     const freq = bpm / 60;
     const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
     group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
-    const targetColor = new THREE.Color(metrics?.weatherColor?.slice?.(0, 7) || "#ffffff");
-    wireMat.color.lerp(targetColor, 0.2);
+    
+    // Update wireframe color with fallback
+    if (wireMat) {
+      const colorStr = metrics?.weatherColor || "#dfb96b"; // fallback to clear sky
+      const targetColor = new THREE.Color(colorStr.slice(0, 7));
+      wireMat.color.lerp(targetColor, 0.1); // Smooth transition
+    }
   });
 
   return (
@@ -537,6 +551,11 @@ function Heart({ metrics, trafficData, transportData }) {
 ----------------------- */
 export default function AnatomicalHeart({ metrics }) {
   const { trafficData, transportData } = useTrafficData();
+
+  // Debug what's being passed to this component
+  useEffect(() => {
+    console.log("🔍 AnatomicalHeart received metrics:", metrics);
+  }, [metrics]);
 
   return (
     <div style={{ width: "100%", height: "720px", background: "black" }}>
