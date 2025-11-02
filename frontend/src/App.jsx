@@ -1,10 +1,12 @@
+// App.jsx
+import React, { useState, useEffect, useRef, memo } from 'react';
 import AnatomicalHeart from './components/AnatomicalHeart';
 import './App.css';
-import { useState, useEffect, useRef } from 'react';
-import { GiAirplane, GiAirplaneArrival, GiCaravan, GiHealthPotion, GiLightningArc, GiMedicalThermometer, GiSunCloud, GiTrafficCone } from 'react-icons/gi';
-import { WiCloud, WiDaySunny, WiRain, WiStrongWind, WiThermometer } from 'react-icons/wi';
+import { GiCaravan, GiLightningArc, GiSunCloud, GiTrafficCone } from 'react-icons/gi';
+import { WiCloud, WiDaySunny } from 'react-icons/wi';
 import { FaPause, FaPlay } from 'react-icons/fa';
 
+const MemoizedHeart = memo(AnatomicalHeart);
 
 function App() {
   const [weatherData, setWeatherData] = useState(null);
@@ -17,202 +19,174 @@ function App() {
   const [predictions, setPredictions] = useState([]);
   const [selectedStreet, setSelectedStreet] = useState('princes-street');
   const [isPaused, setIsPaused] = useState(false);
- 
   const wsRef = useRef(null);
- 
+
   const streets = [
     { id: 'princes-street', name: 'Princes Street', key: 'princes_street_traffic' },
     { id: 'edinburgh-airport', name: 'Edinburgh Airport', key: 'edinburgh_airport_traffic' },
     { id: 'portobello-high-street', name: 'Portobello High Street', key: 'portobello_high_street_traffic' },
     { id: 'nicolson-street', name: 'Nicolson Street', key: 'nicolson_street_traffic' },
     { id: 'lady-road', name: 'Lady Road', key: 'lady_road_traffic' },
-    { id: 'gilmerton-road', name: 'Gilmerton Road', key: 'gilmerton_road_traffic' }
+    { id: 'gilmerton-road', name: 'Gilmerton Road', key: 'gilmerton_road_traffic' },
   ];
 
-
   useEffect(() => {
-    // Initial fetch
     const fetchInitialData = async () => {
       try {
         setConnectionStatus('connecting');
         const response = await fetch('http://localhost:8000/api/data');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        console.log('Initial data:', data);
-       
-        if (data.weather) {
-          setWeatherData(data.weather);
-        }
-        if (data.energy) {
-          setEnergyData(data.energy);
-        }
-        // Set traffic data based on selected street
-        const currentStreet = streets.find(s => s.id === selectedStreet);
-        if (currentStreet && data[currentStreet.key]) {
-          setTrafficData(data[currentStreet.key]);
-        }
-       
+
+        if (data.weather) setWeatherData(data.weather);
+        if (data.energy) setEnergyData(data.energy);
+        const currentStreet = streets.find((s) => s.id === selectedStreet);
+        if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
+
         setLastUpdate(new Date().toLocaleTimeString());
         setConnectionStatus('connected');
         setLoading(false);
         setError(null);
-        // Fetch live predictions (separate endpoint)
+
         try {
           const predResp = await fetch('http://localhost:8000/api/predictions');
           if (predResp.ok) {
             const predJson = await predResp.json();
-            // endpoint returns { predictions: [...], stats: {...} }
             setPredictions(predJson.predictions || predJson);
           }
         } catch (err) {
           console.error('Failed to fetch predictions:', err);
         }
-      } catch (error) {
-        console.error('Failed to fetch initial data:', error);
+      } catch (err) {
+        console.error('Failed to fetch initial data:', err);
         setConnectionStatus('error');
         setError('Cannot connect to backend. Make sure the server is running.');
         setLoading(false);
       }
     };
 
-
     fetchInitialData();
 
-
-    // Connect to WebSocket for real-time updates
     try {
       const ws = new WebSocket('ws://localhost:8000/ws');
       wsRef.current = ws;
-
-
-      ws.onopen = () => {
-        console.log('✅ WebSocket connected');
-        setConnectionStatus('connected');
-        setError(null);
-      };
-
-
+      ws.onopen = () => setConnectionStatus('connected');
       ws.onmessage = (event) => {
-        // Only process messages if not paused
-        if (isPaused) {
-          console.log('⏸️ Update received but paused');
-          return;
-        }
-       
+        if (isPaused) return;
         try {
           const data = JSON.parse(event.data);
-          console.log('📊 Real-time update:', data);
-
-          if (data.weather) {
-            setWeatherData(data.weather);
-          }
-          if (data.energy) {
-            setEnergyData(data.energy);
-          }
-          // Update predictions if present (aggregator may embed predictions object)
+          if (data.weather) setWeatherData(data.weather);
+          if (data.energy) setEnergyData(data.energy);
           if (data.predictions) {
-            // aggregator uses predictor_engine.get_live_predictions_and_stats() which returns { predictions: [...], stats: {...} }
             const preds = data.predictions.predictions || data.predictions;
             setPredictions(preds || []);
           }
-          // Set traffic data based on selected street
-          const currentStreet = streets.find(s => s.id === selectedStreet);
-          if (currentStreet && data[currentStreet.key]) {
-            setTrafficData(data[currentStreet.key]);
-          }
-
+          const currentStreet = streets.find((s) => s.id === selectedStreet);
+          if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
           setLastUpdate(new Date().toLocaleTimeString());
           setConnectionStatus('connected');
           setLoading(false);
           setError(null);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+        } catch (err) {
+          console.error('Error parsing ws message:', err);
         }
       };
-
-
-      ws.onerror = (error) => {
-        console.error('❌ WebSocket error:', error);
+      ws.onerror = (err) => {
+        console.error('WebSocket error', err);
         setConnectionStatus('error');
         setError('WebSocket connection failed');
       };
-
-
-      ws.onclose = () => {
-        console.log('🔌 WebSocket disconnected');
-        setConnectionStatus('disconnected');
-      };
-    } catch (error) {
-      console.error('Failed to create WebSocket:', error);
+      ws.onclose = () => setConnectionStatus('disconnected');
+    } catch (err) {
+      console.error('Failed to create WebSocket:', err);
       setConnectionStatus('error');
-      setError('Cannot establish WebSocket connection');
     }
 
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
+    return () => wsRef.current?.close();
   }, [isPaused]);
- 
-  // Refetch traffic data when street selection changes
+
   useEffect(() => {
     const refetchTrafficData = async () => {
-      if (isPaused) return; // Don't refetch if paused
-     
+      if (isPaused) return;
       try {
         const response = await fetch('http://localhost:8000/api/data');
         if (response.ok) {
           const data = await response.json();
-          const currentStreet = streets.find(s => s.id === selectedStreet);
-          if (currentStreet && data[currentStreet.key]) {
-            setTrafficData(data[currentStreet.key]);
-          }
+          const currentStreet = streets.find((s) => s.id === selectedStreet);
+          if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
         }
-      } catch (error) {
-        console.error('Failed to refetch traffic data:', error);
+      } catch (err) {
+        console.error('Failed to refetch traffic data:', err);
       }
     };
-   
-    if (!loading) {
-      refetchTrafficData();
-    }
+    if (!loading) refetchTrafficData();
   }, [selectedStreet, isPaused]);
 
+  const togglePause = () => setIsPaused((p) => !p);
 
-  const togglePause = () => {
-    setIsPaused(!isPaused);
-  };
-
-  // Prediction selection state (allows choosing any street for the Predictions panel)
   const [selectedPredictionStreet, setSelectedPredictionStreet] = useState('princes-street');
-  const selectedPredictionKey = streets.find(s => s.id === selectedPredictionStreet)?.key;
-  const selectedPrediction = predictions.find(p => p?.validation_data?.location_key === selectedPredictionKey);
+  const selectedPredictionKey = streets.find((s) => s.id === selectedPredictionStreet)?.key;
+  const selectedPrediction = predictions.find(
+    (p) => p?.validation_data?.location_key === selectedPredictionKey
+  );
 
+  /* ---------- Optimized Tilt Effect (GPU-only, no lag) ---------- */
+  const heartRef = useRef();
+  useEffect(() => {
+    const el = heartRef.current;
+    if (!el) return;
+    let targetX = 0,
+      targetY = 0,
+      currentX = 0,
+      currentY = 0,
+      raf;
+
+    const update = () => {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      el.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg)`;
+      raf = requestAnimationFrame(update);
+    };
+    update();
+
+    const onMove = (e) => {
+      const rect = el.getBoundingClientRect();
+      const dx = (e.clientX - (rect.left + rect.width / 2)) / rect.width;
+      const dy = (e.clientY - (rect.top + rect.height / 2)) / rect.height;
+      targetX = dx * 10;
+      targetY = -dy * 10;
+    };
+
+    const onLeave = () => {
+      targetX = 0;
+      targetY = 0;
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseleave', onLeave);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <div className="h-screen bg-black text-white overflow-hidden flex flex-col">
-      {/* Header (reduced size) */}
-      {/* Pause Notifier - Top Left Corner */}
+    <div className="h-screen bg-black text-white overflow-hidden flex flex-col fade-in">
       {isPaused && (
         <div className="fixed top-4 left-4 z-50 px-4 py-2 bg-yellow-900/90 border border-yellow-700 rounded-lg text-sm text-yellow-400 shadow-lg backdrop-blur-sm">
           ⏸️ Updates paused
         </div>
       )}
 
-
       <header className="border-b border-gray-800 py-2 px-4 text-center flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex-1"></div>
           <div className="flex-1 text-center">
-            <h1 className="text-2xl font-bold text-red-500">EDINPULSE</h1>
+            <h1 className="text-4xl font-bold header-title neon-flicker">EDINPULSE</h1>
             <p className="text-gray-400 mt-1 text-sm">Edinburgh's Anatomical City Heart</p>
           </div>
           <div className="flex-1 flex justify-end items-center gap-4">
-            {/* Pause/Resume Button */}
             <button
               onClick={togglePause}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
@@ -220,7 +194,6 @@ function App() {
                   ? 'bg-green-600 hover:bg-green-700 text-white'
                   : 'bg-yellow-600 hover:bg-yellow-700 text-white'
               }`}
-              title={isPaused ? 'Resume updates' : 'Pause updates'}
             >
               {isPaused ? (
                 <>
@@ -234,21 +207,31 @@ function App() {
                 </>
               )}
             </button>
-           
+
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
-                isPaused ? 'bg-yellow-500' :
-                connectionStatus === 'connected' ? 'bg-green-500 animate-pulse' :
-                connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                connectionStatus === 'error' ? 'bg-red-500' :
-                'bg-gray-500'
-              }`}></div>
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isPaused
+                    ? 'bg-yellow-500'
+                    : connectionStatus === 'connected'
+                    ? 'bg-green-500 animate-pulse'
+                    : connectionStatus === 'connecting'
+                    ? 'bg-yellow-500 animate-pulse'
+                    : connectionStatus === 'error'
+                    ? 'bg-red-500'
+                    : 'bg-gray-500'
+                }`}
+              />
               <span className="text-xl text-gray-400">
-                {isPaused ? 'Paused' :
-                 connectionStatus === 'connected' ? 'Live' :
-                 connectionStatus === 'connecting' ? 'Connecting...' :
-                 connectionStatus === 'error' ? 'Error' :
-                 'Disconnected'}
+                {isPaused
+                  ? 'Paused'
+                  : connectionStatus === 'connected'
+                  ? 'Live'
+                  : connectionStatus === 'connecting'
+                  ? 'Connecting...'
+                  : connectionStatus === 'error'
+                  ? 'Error'
+                  : 'Disconnected'}
               </span>
             </div>
           </div>
@@ -259,17 +242,14 @@ function App() {
           </div>
         )}
       </header>
-     
-  {/* Main Content - 3 Column Layout */}
-  <main className="h-full flex overflow-hidden">
-       
-        {/* LEFT: Current Conditions */}
-        <div className="w-1/4 border-r border-gray-800 flex flex-col overflow-y-auto p-4">
-          <h2 className="text-lg font-bold text-gray-200 mb-3 sticky top-0 bg-black pb-2">Current Conditions</h2>
-          {lastUpdate && (
-            <p className="text-xs text-gray-500 mb-3">Last update: {lastUpdate}</p>
-          )}
-         
+
+      <main className="h-full flex overflow-hidden">
+        {/* LEFT PANEL */}
+        <div className="w-1/4 border-r border-gray-800 flex flex-col overflow-y-auto p-4 panel fade-in">
+          <h2 className="text-lg font-bold text-gray-200 mb-3 sticky top-0 bg-black pb-2">
+            Current Conditions
+          </h2>
+          {lastUpdate && <p className="text-xs text-gray-500 mb-3">Last update: {lastUpdate}</p>}
           <div className="flex flex-col gap-3">
             <DataFlowCard
               vessel="Edinburgh Weather"
@@ -278,11 +258,11 @@ function App() {
               value={weatherData?.temperature}
               unit="°C"
               description={weatherData?.description || 'N/A'}
-              score={weatherData?.score}
-              icon={weatherData?.description?.toLowerCase().includes('cloud') ? WiCloud : WiDaySunny}
+              icon={
+                weatherData?.description?.toLowerCase().includes('cloud') ? WiCloud : WiDaySunny
+              }
               type="weather"
             />
-           
             <DataFlowCard
               vessel="Carbon Intensity"
               dataType="Energy Status"
@@ -294,30 +274,30 @@ function App() {
               icon={GiLightningArc}
               type="energy"
             />
-           
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-              <div className="mb-3">
-                <label className="text-xs text-gray-400 block mb-2">Select Street:</label>
-                <select
-                  value={selectedStreet}
-                  onChange={(e) => setSelectedStreet(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gray-600"
-                >
-                  {streets.map(street => (
-                    <option key={street.id} value={street.id}>
-                      {street.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-             
+              <label className="text-xs text-gray-400 block mb-2">Select Street:</label>
+              <select
+                value={selectedStreet}
+                onChange={(e) => setSelectedStreet(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
+              >
+                {streets.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
               <DataFlowCard
                 vessel="Traffic Flow"
-                dataType={streets.find(s => s.id === selectedStreet)?.name || 'Traffic'}
+                dataType={streets.find((s) => s.id === selectedStreet)?.name || 'Traffic'}
                 loading={loading}
                 value={trafficData?.score}
                 unit="/100"
-                description={trafficData?.current_speed ? `${trafficData.current_speed} km/h` : 'No data'}
+                description={
+                  trafficData?.current_speed
+                    ? `${trafficData.current_speed.toFixed(2)} km/h`
+                    : 'No data'
+                }
                 score={trafficData?.score}
                 icon={GiCaravan}
                 type="traffic"
@@ -326,60 +306,55 @@ function App() {
           </div>
         </div>
 
-
-        {/* CENTER: Anatomical Heart */}
+        {/* CENTER HEART */}
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <p className="text-gray-400 text-xs mb-2">Drag to rotate</p>
           <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden w-full h-full">
-            <AnatomicalHeart isPaused={isPaused} />
+            <div ref={heartRef} className="heart-stage w-full h-full">
+              <MemoizedHeart isPaused={isPaused} />
+            </div>
           </div>
         </div>
 
-
-        {/* RIGHT: Predictions */}
-        <div className="w-1/4 border-l border-gray-800 flex flex-col overflow-y-auto p-4">
-          <h2 className="text-lg font-bold text-gray-200 mb-3 sticky top-0 bg-black pb-2">Predictions</h2>
-
-
+        {/* RIGHT PANEL */}
+        <div className="w-1/4 border-l border-gray-800 flex flex-col overflow-y-auto p-4 panel fade-in">
+          <h2 className="text-lg font-bold text-gray-200 mb-3 sticky top-0 bg-black pb-2">
+            Predictions
+          </h2>
           <div className="flex flex-col gap-3">
-            <DataFlowCard
-              vessel="Weather"
-              dataType="Heart Colour"
-              description="Weather conditions, forecasts"
-              icon={GiSunCloud}
-            />
-            <DataFlowCard
-              vessel="Energy"
-              dataType="Pulse"
-              description="Energy consumption patterns"
-              icon={GiLightningArc}
-            />
+            <DataFlowCard vessel="Weather" dataType="Heart Colour" icon={GiSunCloud} />
+            <DataFlowCard vessel="Energy" dataType="Pulse" icon={GiLightningArc} />
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-              <label className="text-xs text-gray-400 block mb-2">Select Street for Predictions:</label>
+              <label className="text-xs text-gray-400 block mb-2">
+                Select Street for Predictions:
+              </label>
               <select
                 value={selectedPredictionStreet}
                 onChange={(e) => setSelectedPredictionStreet(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gray-600"
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
               >
-                {streets.map(street => (
-                  <option key={street.id} value={street.id}>
-                    {street.name}
+                {streets.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
                   </option>
                 ))}
               </select>
               <DataFlowCard
                 vessel="Congestion Prediction"
-                dataType={streets.find(s => s.id === selectedPredictionStreet)?.name || 'Street'}
+                dataType={streets.find((s) => s.id === selectedPredictionStreet)?.name || 'Street'}
                 loading={loading}
-                description={selectedPrediction ? `${selectedPrediction.severity} — Confidence ${selectedPrediction.confidence}%` : 'No active predictions'}
+                description={
+                  selectedPrediction
+                    ? `${selectedPrediction.severity} — Confidence ${selectedPrediction.confidence}%`
+                    : 'No active predictions'
+                }
                 icon={GiTrafficCone}
-                value={selectedPrediction ? selectedPrediction.severity : undefined}
-                score={selectedPrediction ? selectedPrediction.severity: undefined}
+                value={selectedPrediction?.severity}
+                score={selectedPrediction?.severity}
                 unit="%"
                 type="trafficPrediction"
-            />
+              />
             </div>
-            
           </div>
         </div>
       </main>
@@ -387,106 +362,56 @@ function App() {
   );
 }
 
-
+/* ---------- DataFlowCard Component ---------- */
 function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, value, unit, score, type }) {
-  // Determine colors based on type and score
   const getColorClasses = () => {
-    if (loading || value === undefined) return {
-      bg: 'bg-gray-800',
-      text: 'text-gray-400',
-      border: 'border-gray-700',
-      glow: ''
-    };
-
-
+    if (loading || value === undefined)
+      return { bg: 'bg-gray-800', text: 'text-gray-400', border: 'border-gray-700' };
     if (type === 'weather') {
-      const temp = value;
-      if (temp < 5) return { bg: 'bg-blue-900/30', text: 'text-blue-800', border: 'border-blue-700', glow: 'shadow-blue-500/20' };
-      if (temp < 15) return { bg: 'bg-cyan-900/30', text: 'text-cyan-400', border: 'border-cyan-700', glow: 'shadow-cyan-500/20' };
-      if (temp < 20) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700', glow: 'shadow-green-500/20' };
-      return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700', glow: 'shadow-orange-500/20' };
+      const t = value;
+      if (t < 5) return { bg: 'bg-blue-900/30', text: 'text-blue-300', border: 'border-blue-700' };
+      if (t < 15) return { bg: 'bg-cyan-900/30', text: 'text-cyan-400', border: 'border-cyan-700' };
+      if (t < 20) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
     }
-
-
     if (type === 'energy') {
-      if (score >= 90) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700', glow: 'shadow-green-500/20' };
-      if (score >= 60) return { bg: 'bg-yellow-900/30', text: 'text-yellow-400', border: 'border-yellow-700', glow: 'shadow-yellow-500/20' };
-      if (score >= 30) return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700', glow: 'shadow-orange-500/20' };
-      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700', glow: 'shadow-red-500/20' };
+      if (score >= 90) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      if (score >= 60) return { bg: 'bg-yellow-900/30', text: 'text-yellow-400', border: 'border-yellow-700' };
+      if (score >= 30) return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
+      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
-
-
     if (type === 'traffic') {
-      if (score >= 75) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700', glow: 'shadow-green-500/20' };
-      if (score >= 50) return { bg: 'bg-yellow-900/30', text: 'text-yellow-400', border: 'border-yellow-700', glow: 'shadow-yellow-500/20' };
-      if (score >= 25) return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700', glow: 'shadow-orange-500/20' };
-      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700', glow: 'shadow-red-500/20' };
+      if (score >= 75) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      if (score >= 50) return { bg: 'bg-yellow-900/30', text: 'text-yellow-400', border: 'border-yellow-700' };
+      if (score >= 25) return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
+      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
-
     if (type === 'trafficPrediction') {
-      if (score == 'Major') return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700', glow: 'shadow-green-500/20' };
-      if (score >= 'Minor') return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700', glow: 'shadow-orange-500/20' };
-      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700', glow: 'shadow-red-500/20' };
+      if (score === 'Major')
+        return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      if (score === 'Minor')
+        return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
+      return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
-
-
-    return { bg: 'bg-gray-800', text: 'text-gray-400', border: 'border-gray-700', glow: '' };
+    return { bg: 'bg-gray-800', text: 'text-gray-400', border: 'border-gray-700' };
   };
 
-
   const colors = getColorClasses();
-
-
-  // For simple cards without values
-  if (!value && value !== 0) {
-    return (
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded flex items-center justify-center text-2xl">
-            {Icon && <Icon />}
-          </div>
-          <div className="flex-grow">
-            <div className="font-bold text-left">{vessel}</div>
-            <div className="text-xs text-gray-500 text-left">{dataType}</div>
-          </div>
-        </div>
-        <p className="text-sm text-gray-400">{description}</p>
-      </div>
-    );
-  }
-
-
   return (
-    <div className={`${colors.bg} border-2 ${colors.border} rounded-lg p-3 shadow-lg ${colors.glow} transition-all duration-300 hover:scale-105`}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-full ${colors.bg} ${colors.border} border flex items-center justify-center text-3xl ${colors.text} animate-pulse`}>
-          {Icon && <Icon />}
-        </div>
-        <div className="flex-grow">
-          <div className="font-bold text-left text-white">{vessel}</div>
-          <div className="text-xs text-gray-400 text-left">{dataType}</div>
-        </div>
+    <div
+      className={`border ${colors.border} ${colors.bg} rounded-lg p-3 card-animate hover:scale-[1.02] transition-transform duration-300`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        {Icon && <Icon className={`text-xl ${colors.text}`} />}
+        <h3 className={`font-semibold ${colors.text}`}>{vessel}</h3>
       </div>
-     
-      {loading ? (
-        <div className="text-center py-4">
-          <div className="animate-spin text-4xl text-gray-500">⟳</div>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-baseline gap-2 mb-2">
-            <span className={`text-2xl font-bold ${colors.text} tabular-nums`}>
-              {value}
-            </span>
-            <span className={`text-xl ${colors.text} opacity-70`}>{unit}</span>
-          </div>
-          <p className="text-sm text-gray-300">{description}</p>
-        </>
-      )}
+      <p className="text-xs text-gray-500 mb-1">{dataType}</p>
+      <p className={`text-lg font-bold ${colors.text}`}>
+        {loading ? '...' : value !== undefined ? `${value} ${unit || ''}` : 'N/A'}
+      </p>
+      {description && <p className="text-sm text-gray-400">{description}</p>}
     </div>
   );
 }
 
-
 export default App;
-

@@ -22,6 +22,75 @@ function useHeartPaths() {
 }
 
 /* -----------------------
+   Traffic Data Hook
+----------------------- */
+function useTrafficData() {
+  const [trafficData, setTrafficData] = useState({});
+  const prevDataRef = useRef({});
+
+  async function fetchTraffic(name, url) {
+  try {
+    console.log(`🌐 Fetching traffic for ${name} → ${url}`);
+    const res = await fetch(url, { cache: "no-cache" });
+    if (!res.ok) {
+      console.warn(`⚠️ ${name} returned status ${res.status}`);
+      return { score: 50, speed: 10 }; // fallback
+    }
+
+    const data = await res.json();
+    console.log(`✅ ${name} data:`, data);
+
+    const score = Number(data?.score ?? 100);
+    const speed = Number(data?.current_speed ?? 10);
+
+    return { score, speed, raw: data };
+  } catch (err) {
+    console.error(`❌ Failed to fetch ${name} traffic`, err);
+    return { score: 50, speed: 10 };
+  }
+}
+
+  async function refreshTraffic() {
+    const endpoints = {
+      princes: "http://localhost:8000/api/traffic/princes-street",
+      leith: "http://localhost:8000/api/traffic/leith-street",
+      nicolson: "http://localhost:8000/api/traffic/nicolson-street",
+      portobello: "http://localhost:8000/api/traffic/portobello-high-street",
+      lady: "http://localhost:8000/api/traffic/lady-road",
+      gilmerton: "http://localhost:8000/api/traffic/gilmerton-road",
+      airport: "http://localhost:8000/api/traffic/edinburgh-airport",
+    };
+
+    const newData = {};
+    for (const [key, url] of Object.entries(endpoints)) {
+      newData[key] = await fetchTraffic(key, url);
+    }
+
+    // Smooth interpolation (avoid sudden jumps)
+    const prevData = prevDataRef.current;
+    const blended = {};
+    for (const key of Object.keys(newData)) {
+      const prev = prevData[key] || { score: 100, speed: 10 };
+      blended[key] = {
+        score: lerp(prev.score, newData[key].score, 0.3),
+        speed: lerp(prev.speed, newData[key].speed, 0.3),
+      };
+    }
+
+    prevDataRef.current = blended;
+    setTrafficData(blended);
+  }
+
+  useEffect(() => {
+    refreshTraffic();
+    const interval = setInterval(refreshTraffic, 30000); // every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  return trafficData;
+}
+
+/* -----------------------
    Helpers
 ----------------------- */
 function resampleCurvePoints(pts, samples = 64) {
@@ -33,7 +102,7 @@ function resampleCurvePoints(pts, samples = 64) {
 /* -----------------------
    Particle system + traffic spheres
 ----------------------- */
-function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
+function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
   const origPaths = useHeartPaths();
   const [hovered, setHovered] = useState(null);
   const groupRefs = useRef([]);
@@ -43,18 +112,81 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
     return origPaths.map((p) => resampleCurvePoints(p, 64));
   }, [origPaths]);
 
-  /* ---- Anchors (city locations + traffic density) ---- */
-  const anchors = [
-    { name: "Princes Street", pathIndex: 2, t: 0.5, density: 0.95, speed: 1.2, color: "#ff2222", description: "Main shopping street - peak traffic" },
-    { name: "Leith Street", pathIndex: 4, t: 0.38, density: 0.85, speed: 1.1, color: "#ff3333", description: "Main route to port area" },
-    { name: "Nicolson Street", pathIndex: 3, t: 0.56, density: 1.0, speed: 1.0, color: "#ff4444", description: "Busy N-S corridor" },
-    { name: "Portobello", pathIndex: 7, t: 0.72, density: 0.5, speed: 0.9, color: "#ffaa44", description: "Coastal suburb connection" },
-    { name: "Lady Road", pathIndex: 5, t: 0.52, density: 0.4, speed: 0.7, color: "#ffbb55", description: "Eastern suburban route" },
-    { name: "Gilmerton", pathIndex: 8, t: 0.83, density: 0.2, speed: 0.6, color: "#99bbff", description: "Southern suburb link" },
-    { name: "Edinburgh Airport", pathIndex: 1, t: 0.12, density: 0.15, speed: 0.5, color: "#aaccff", description: "Airport connection" },
-  ];
+  useEffect(() => {
+  console.log("Live traffic data received:", liveTraffic);
+  }, [liveTraffic]);
 
-  /* ---- Compute world positions for anchors ---- */
+  /* ---- Anchors (live traffic) ---- */
+  const anchors = useMemo(
+    () => [
+      {
+        name: "Princes Street",
+        pathIndex: 2,
+        t: 0.5,
+        density: Math.max(0, 1 - ((liveTraffic?.princes?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.princes?.speed ?? 10) / 20)),
+        color: "#ff2222",
+        description: "Main shopping street - peak traffic",
+      },
+      {
+        name: "Leith Street",
+        pathIndex: 4,
+        t: 0.38,
+        density: Math.max(0, 1 - ((liveTraffic?.leith?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.leith?.speed ?? 10) / 20)),
+        color: "#ff3333",
+        description: "Main route to port area",
+      },
+      {
+        name: "Nicolson Street",
+        pathIndex: 3,
+        t: 0.56,
+        density: Math.max(0, 1 - ((liveTraffic?.nicolson?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.nicolson?.speed ?? 10) / 20)),
+        color: "#ff4444",
+        description: "Busy N-S corridor",
+      },
+      {
+        name: "Portobello",
+        pathIndex: 7,
+        t: 0.72,
+        density: Math.max(0, 1 - ((liveTraffic?.portobello?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.portobello?.speed ?? 10) / 20)),
+        color: "#ffaa44",
+        description: "Coastal suburb connection",
+      },
+      {
+        name: "Lady Road",
+        pathIndex: 5,
+        t: 0.52,
+        density: Math.max(0, 1 - ((liveTraffic?.lady?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.lady?.speed ?? 10) / 20)),
+        color: "#ffbb55",
+        description: "Eastern suburban route",
+      },
+      {
+        name: "Gilmerton",
+        pathIndex: 8,
+        t: 0.83,
+        density: Math.max(0, 1 - ((liveTraffic?.gilmerton?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.gilmerton?.speed ?? 10) / 20)),
+        color: "#99bbff",
+        description: "Southern suburb link",
+      },
+      {
+        name: "Edinburgh Airport",
+        pathIndex: 1,
+        t: 0.12,
+        density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
+        speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.airport?.speed ?? 10) / 20)),
+        color: "#aaccff",
+        description: "Airport connection",
+      },
+    ],
+    [liveTraffic]
+  );
+
+  /* ---- Compute world positions ---- */
   const anchorWorld = useMemo(() => {
     return anchors.map((a) => {
       const curve = paths[a.pathIndex]
@@ -63,13 +195,13 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
       const pos = curve ? curve.getPoint(a.t) : new THREE.Vector3();
       return { ...a, pos };
     });
-  }, [paths]);
+  }, [paths, anchors]);
 
   /* ---- Influence field ---- */
   const getInfluenceAt = (point) => {
-    let totalW = 0;
-    let dens = 0;
-    let spd = 0;
+    let totalW = 0,
+      dens = 0,
+      spd = 0;
     const radius = 0.2;
     anchorWorld.forEach((a) => {
       const d = point.distanceTo(a.pos);
@@ -91,8 +223,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
         "centripetal"
       );
       const samples = 5;
-      let totalDensity = 0;
-      let totalSpeed = 0;
+      let totalDensity = 0,
+        totalSpeed = 0;
       for (let s = 0; s < samples; s++) {
         const t = s / (samples - 1);
         const point = curve.getPoint(t);
@@ -103,19 +235,19 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
       const avgDensity = totalDensity / samples;
       const avgSpeed = totalSpeed / samples;
       const densityPower = Math.pow(avgDensity, 3);
-      const particleCount = Math.round(10 + 190 * densityPower);
+      const particleCount = Math.round(40 + 220 * densityPower);
       const speedMult = 0.5 + avgSpeed;
       return {
         id: `path${i}`,
         curve,
         colorStart: new THREE.Color("#ff6666"),
         colorEnd: new THREE.Color("#ff2222"),
-        speed: (0.2 + Math.random() * 0.15) * speedMult,
+        speed: (0.45 + Math.random() * 0.15) * speedMult,
         count: particleCount,
         dir: i % 2 === 0 ? 1 : -1,
       };
     });
-  }, [paths]);
+  }, [paths, liveTraffic]);
 
   /* ---- Particle buffers ---- */
   const totalParticles = useMemo(() => branches.reduce((s, b) => s + b.count, 0), [branches]);
@@ -148,39 +280,53 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
 
   /* ---- Animation ---- */
   useFrame(({ clock }) => {
-    const time = clock.elapsedTime;
-    const posArr = geometry.attributes.position.array;
-    let ptr = 0;
-    for (const p of particleData) {
-      // Slower movement
-      p.t += (p.speed * 0.00015) * p.dir;
-      if (p.t > 1) p.t -= 1;
-      if (p.t < 0) p.t += 1;
-      const base = p.branch.curve.getPoint(p.t);
-      posArr.set([base.x, base.y, base.z], ptr * 3);
-      ptr++;
-    }
-    geometry.attributes.position.needsUpdate = true;
+  const time = clock.elapsedTime;
+  const posArr = geometry.attributes.position.array;
+  let ptr = 0;
 
-    // Subtle pulsing anchors
-    groupRefs.current.forEach((ref, i) => {
-    if (ref && anchorWorld[i]) {
-      const { density } = anchorWorld[i]; // 0–1 range
+  for (const p of particleData) {
+    p.t += (p.speed * 0.00015) * p.dir;
+    if (p.t > 1) p.t -= 1;
+    if (p.t < 0) p.t += 1;
+    const base = p.branch.curve.getPoint(p.t);
+    posArr.set([base.x, base.y, base.z], ptr * 3);
+    ptr++;
+  }
+  geometry.attributes.position.needsUpdate = true;
 
-      // Base size increases with density (larger core)
-      const baseSize = 1 + density * 0.8; // up to ~1.8x
+  groupRefs.current.forEach((ref, i) => {
+    const a = anchorWorld[i];
+    if (!ref || !a) return;
 
-      // Pulse amplitude also increases with density
-      const pulseAmp = 0.1 + 0.25 * density;
+    const { density, speed } = a;
+    const baseSize = 1 + density * 1.8;
+    const pulseAmp = 0.1 + 0.45 * density;
+    const pulseSpeed = 1.2 + speed * 3.5;
+    const scale = baseSize * (1 + pulseAmp * Math.sin(time * pulseSpeed + i));
+    ref.scale.set(scale, scale, scale);
 
-      // Pulse frequency faster for denser areas
-      const pulseSpeed = 1.5 + density * 3.0;
+    let color;
+    if (density > 0.7) color = "#ff2222";
+    else if (density > 0.4) color = "#ff9933";
+    else if (density > 0.15) color = "#ffee55";
+    else color = "#aaccff";
 
-      const scale = baseSize * (1 + pulseAmp * Math.sin(time * pulseSpeed + i));
-      ref.scale.set(scale, scale, scale);
-    }
+    ref.children?.forEach?.((child) => {
+      if (!child.isMesh) return;
+      if (child.material) {
+        child.material.color.set(color);
+        if (child.material.emissive) {
+          child.material.emissive.set(color);
+          child.material.emissiveIntensity = 1.5 + density * 1.5;
+        }
+        child.material.needsUpdate = true;
+      }
+    });
+    a.color = color;
   });
-  });
+}); // 👈 CLOSES useFrame PROPERLY
+
+
 
   /* ---- Rendering ---- */
   return (
@@ -204,29 +350,22 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
           onPointerOver={() => setHovered(i)}
           onPointerOut={() => setHovered(null)}
         >
-          {/* Influence radius (faint) */}
+          {/* Base rings */}
           <mesh>
             <sphereGeometry args={[0.05, 16, 16]} />
-            <meshBasicMaterial
-              color={a.color}
-              transparent
-              opacity={0.15}
-              wireframe
-            />
+            <meshBasicMaterial color={a.color} transparent opacity={0.15} wireframe />
           </mesh>
-
-          {/* Core marker */}
+          {/* Core sphere */}
           <mesh>
             <sphereGeometry args={[0.018, 16, 16]} />
             <meshStandardMaterial
               color={a.color}
               emissive={a.color}
-              emissiveIntensity={1.8 + a.density}
+              emissiveIntensity={2.0 + a.density}
               roughness={0.3}
               metalness={0.7}
             />
           </mesh>
-
           {/* Glow */}
           <mesh>
             <sphereGeometry args={[0.035, 16, 16]} />
@@ -237,54 +376,80 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
               blending={THREE.AdditiveBlending}
             />
           </mesh>
-
-          {/* Tooltip */}
           {hovered === i && (
-            <Html distanceFactor={8}>
+            <Html
+              distanceFactor={1}
+              zIndexRange={[10, 20]}
+              pointerEvents="none"
+            >
               <div
                 style={{
-                  color: "white",
-                  background: "rgba(0,0,0,0.9)",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  fontSize: "13px",
-                  minWidth: "200px",
-                  border: `2px solid ${a.color}`,
-                  boxShadow: `0 0 15px ${a.color}`,
+                  color: a.color,
+                  background: "rgba(10, 10, 20, 0.9)",
+                  padding: "40px 80px",
+                  borderRadius: "20px",
+                  fontSize: "42px",
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', sans-serif",
+                  border: `1px solid ${a.color}`,
+                  boxShadow: `0 0 8px ${a.color}`,
+                  backdropFilter: "blur(3px)",
+                  transform: "translateY(-12px)",
+                  textShadow: `0 0 3px ${a.color}, 0 0 7px ${a.color}`,
+                  opacity: 0,
+                  animation: "tooltipFade 0.3s ease-out forwards",
+                  whiteSpace: "nowrap",
+                  textAlign: "center",
                 }}
               >
+                {/* Title */}
+                {a.name}
+
+                {/* Subtext (Score + Speed) */}
                 <div
                   style={{
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                    marginBottom: "6px",
+                    fontSize: "20px",
+                    fontWeight: 400,
+                    color: a.color
+                      ? `${a.color}cc` // same color but slightly transparent
+                      : "rgba(200, 200, 200, 0.7)",
+                    letterSpacing: "0.04em",
+                    marginTop: "6px",
+                    textTransform: "none",
+                    fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  {a.name}
+                  Score: {(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Speed: {(
+                    Number(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
+                  )}{" "}
+                  km/h
                 </div>
-                <div
-                  style={{
-                    fontSize: "11px",
-                    opacity: 0.9,
-                    marginBottom: "6px",
-                  }}
-                >
-                  {a.description}
-                </div>
-                <div
-                  style={{
-                    fontSize: "11px",
-                    opacity: 0.8,
-                    borderTop: "1px solid rgba(255,255,255,0.2)",
-                    paddingTop: "6px",
-                  }}
-                >
-                  <strong>Density:</strong> {(a.density * 100).toFixed(0)}%<br />
-                  <strong>Speed:</strong> {(a.speed * 100).toFixed(0)}%
-                </div>
+
+                {/* Animation style */}
+                <style>{`
+                  @keyframes tooltipFade {
+                    from {
+                      transform: translateY(-18px);
+                      opacity: 0;
+                      filter: blur(4px);
+                    }
+                    to {
+                      transform: translateY(-12px);
+                      opacity: 1;
+                      filter: blur(0);
+                    }
+                  }
+                `}</style>
               </div>
             </Html>
           )}
+
+
+
+
         </group>
       ))}
     </>
@@ -292,9 +457,9 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
 }
 
 /* -----------------------
-   Heart wrapper (pulse + weather)
+   Heart wrapper
 ----------------------- */
-function Heart({ metrics }) {
+function Heart({ metrics, trafficData }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
@@ -311,18 +476,12 @@ function Heart({ metrics }) {
       }
     });
     if (!geoms.length) return null;
-    return new THREE.Mesh(
-      mergeGeometries(geoms, true),
-      mat || new THREE.MeshPhysicalMaterial()
-    );
+    return new THREE.Mesh(mergeGeometries(geoms, true), mat || new THREE.MeshPhysicalMaterial());
   }, [scene]);
 
   if (!mergedMesh) return null;
 
-  const wireGeometry = useMemo(
-    () => new THREE.WireframeGeometry(mergedMesh.geometry),
-    [mergedMesh]
-  );
+  const wireGeometry = useMemo(() => new THREE.WireframeGeometry(mergedMesh.geometry), [mergedMesh]);
   const wireMat = useMemo(
     () =>
       new THREE.LineBasicMaterial({
@@ -345,13 +504,15 @@ function Heart({ metrics }) {
     wireMat.color.lerp(targetColor, 0.2);
   });
 
+  
+
   return (
     <group ref={group} position={[0, -0.02, 0]}>
       <mesh geometry={mergedMesh.geometry}>
         <meshPhysicalMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
       <lineSegments geometry={wireGeometry} material={wireMat} />
-      <CoronaryParticlesFromJSON mesh={mergedMesh} traffic={metrics?.traffic ?? 0.5} />
+      <CoronaryParticlesFromJSON mesh={mergedMesh} traffic={metrics?.traffic ?? 0.5} liveTraffic={trafficData} />
     </group>
   );
 }
@@ -360,6 +521,8 @@ function Heart({ metrics }) {
    Top-level component
 ----------------------- */
 export default function AnatomicalHeart({ metrics }) {
+  const trafficData = useTrafficData();
+
   return (
     <div style={{ width: "100%", height: "720px", background: "black" }}>
       <Canvas camera={{ position: [0, 0, 3], fov: 55 }}>
@@ -367,9 +530,9 @@ export default function AnatomicalHeart({ metrics }) {
         <directionalLight position={[5, 6, 3]} intensity={0.5} />
         <directionalLight position={[-4, -3, -2]} intensity={0.2} />
         <Suspense fallback={null}>
-          <Heart metrics={metrics} />
+          <Heart metrics={metrics} trafficData={trafficData} />
         </Suspense>
-        <OrbitControls enableZoom enablePan={false} minDistance={1.2} maxDistance={6} />
+        <OrbitControls enableZoom enablePan={false} minDistance={1.5} maxDistance={2.5} />
       </Canvas>
     </div>
   );
