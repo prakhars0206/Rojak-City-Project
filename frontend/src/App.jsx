@@ -19,16 +19,21 @@ const calculateBPMFromCarbon = (carbonIntensity) => {
 };
 
 // Helper function to get weather color
-const getWeatherColor = (description = "") => {
+const getWeatherColor = (description) => {
+  if (!description) return "#dfb96b"; // default clear sky
+  
   const d = String(description).toLowerCase();
-  if (d.includes("clear sky") || d.includes("mainly clear")) return "#dfb96b";
-  if (d.includes("partly")) return "#ecc67a";
-  if (d.includes("overcast")) return "#4a595b";
-  if (d.includes("fog")) return "#7e7d7d";
-  if (d.includes("rain")) return "#6c7ca4";
-  if (d.includes("snow")) return "#ffffff";
-  if (d.includes("thunder")) return "#6633cc";
-  return "#734d4d";
+  console.log(`🎨 Weather: "${description}" -> Color mapping...`);
+  
+  if (d.includes("clear") || d.includes("sunny")) return "#f1a11fff";
+  if (d.includes("partly") || d.includes("partial")) return "#ecc67a";
+  if (d.includes("overcast") || d.includes("cloudy")) return "#4a595b";
+  if (d.includes("fog") || d.includes("mist")) return "#7e7d7d";
+  if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return "#6c7ca4";
+  if (d.includes("snow") || d.includes("sleet")) return "#ffffff";
+  if (d.includes("thunder") || d.includes("storm")) return "#6633cc";
+  
+  return "#dfb96b"; // fallback
 };
 
 function App() {
@@ -62,7 +67,10 @@ function App() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
 
-        if (data.weather) setWeatherData(data.weather);
+        if (data.weather) {
+          console.log("📡 Received weather data:", data.weather);
+          setWeatherData(data.weather);
+        }
         if (data.energy) setEnergyData(data.energy);
         const currentStreet = streets.find((s) => s.id === selectedStreet);
         if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
@@ -99,7 +107,10 @@ function App() {
         if (isPaused) return;
         try {
           const data = JSON.parse(event.data);
-          if (data.weather) setWeatherData(data.weather);
+          if (data.weather) {
+            console.log("📡 WebSocket weather update:", data.weather);
+            setWeatherData(data.weather);
+          }
           if (data.energy) setEnergyData(data.energy);
           if (data.predictions) {
             const preds = data.predictions.predictions || data.predictions;
@@ -190,9 +201,11 @@ function App() {
   }, []);
 
   // Create metrics object from state for the heart
+  const weatherColor = getWeatherColor(weatherData?.description);
+  
   const metrics = {
     bpm: calculateBPMFromCarbon(energyData?.carbon_intensity || 0),
-    weatherColor: getWeatherColor(weatherData?.description),
+    weatherColor: weatherColor,
     weather: weatherData,
     traffic: trafficData?.score ? trafficData.score / 100 : 0.5,
     activity: 0.5,
@@ -201,6 +214,11 @@ function App() {
     social: 0.3,
     energy: energyData?.score ? energyData.score / 100 : 0.2,
   };
+
+  // Debug weather updates
+  useEffect(() => {
+    console.log("🌈 Weather color updated:", weatherColor, "from description:", weatherData?.description);
+  }, [weatherData?.description]);
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden flex flex-col fade-in">

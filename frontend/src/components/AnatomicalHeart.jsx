@@ -672,6 +672,11 @@ function Heart({ metrics, trafficData, transportData, onBpmChange }) {
     });
   }, [metrics]);
 
+  // Add this new useEffect to specifically track weatherColor changes
+  useEffect(() => {
+    console.log("🌈 Weather color update:", metrics?.weatherColor);
+  }, [metrics?.weatherColor]);
+
   const mergedMesh = useMemo(() => {
     if (!scene) return null;
     const geoms = [];
@@ -729,10 +734,16 @@ function Heart({ metrics, trafficData, transportData, onBpmChange }) {
     const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
     group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
 
-    if (wireMat) {
-      const colorStr = metrics?.weatherColor || "#dfb96b";
+    // Update wireframe color with debug logging
+    if (wireMat && metrics?.weatherColor) {
+      const colorStr = metrics.weatherColor;
       const targetColor = new THREE.Color(colorStr.slice(0, 7));
       wireMat.color.lerp(targetColor, 0.1);
+      
+      // Log every 60 frames (approximately once per second)
+      if (Math.floor(t * 60) % 60 === 0) {
+        console.log("🎨 Current wire color:", wireMat.color.getHexString(), "Target:", targetColor.getHexString());
+      }
     }
 
     onBpmChange?.(parseFloat(currentBpm.toFixed(2)));
