@@ -154,7 +154,7 @@ export function useCityData() {
     if (description === 'Clear sky') return '#dfb96bff';
     if (description === 'Mainly clear') return '#f4c882ff';
     if (description === 'Partly cloudy') return '#ecc67aff';
-    if (description === 'Overcast') return '#8f7e7eff';
+    if (description === 'Overcast') return '#4a595bff';
     if (description.includes('Fog')) return '#7e7d7dff';
     if (description.includes('rain')) return '#6c7ca4ff';
     if (description.includes('snow')) return '#ffffffff';

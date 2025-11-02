@@ -22,33 +22,39 @@ function useHeartPaths() {
 }
 
 /* -----------------------
-   Traffic Data Hook
+   Traffic + Transport Data Hook
 ----------------------- */
 function useTrafficData() {
   const [trafficData, setTrafficData] = useState({});
+  const [transportData, setTransportData] = useState({ busCount: 0 });
   const prevDataRef = useRef({});
 
   async function fetchTraffic(name, url) {
-  try {
-    console.log(`🌐 Fetching traffic for ${name} → ${url}`);
-    const res = await fetch(url, { cache: "no-cache" });
-    if (!res.ok) {
-      console.warn(`⚠️ ${name} returned status ${res.status}`);
-      return { score: 50, speed: 10 }; // fallback
+    try {
+      const res = await fetch(url, { cache: "no-cache" });
+      if (!res.ok) return { score: 50, speed: 10 };
+      const data = await res.json();
+      const score = Number(data?.score ?? 100);
+      const speed = Number(data?.current_speed ?? 10);
+      return { score, speed, raw: data };
+    } catch (err) {
+      console.error(`❌ Failed to fetch ${name} traffic`, err);
+      return { score: 50, speed: 10 };
     }
-
-    const data = await res.json();
-    console.log(`✅ ${name} data:`, data);
-
-    const score = Number(data?.score ?? 100);
-    const speed = Number(data?.current_speed ?? 10);
-
-    return { score, speed, raw: data };
-  } catch (err) {
-    console.error(`❌ Failed to fetch ${name} traffic`, err);
-    return { score: 50, speed: 10 };
   }
-}
+
+  async function fetchTransport() {
+    try {
+      const res = await fetch("http://localhost:8000/api/live-transport", { cache: "no-cache" });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = await res.json();
+      const busCount = data?.raw?.filter?.((v) => v.vehicle_type === "bus")?.length ?? 0;
+      setTransportData({ busCount, raw: data.raw });
+    } catch (err) {
+      console.warn("⚠️ Could not fetch transport data:", err);
+      setTransportData({ busCount: 0 });
+    }
+  }
 
   async function refreshTraffic() {
     const endpoints = {
@@ -66,7 +72,7 @@ function useTrafficData() {
       newData[key] = await fetchTraffic(key, url);
     }
 
-    // Smooth interpolation (avoid sudden jumps)
+    // Smooth interpolation
     const prevData = prevDataRef.current;
     const blended = {};
     for (const key of Object.keys(newData)) {
@@ -83,12 +89,17 @@ function useTrafficData() {
 
   useEffect(() => {
     refreshTraffic();
-    const interval = setInterval(refreshTraffic, 30000); // every 30s
+    fetchTransport();
+    const interval = setInterval(() => {
+      refreshTraffic();
+      fetchTransport();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  return trafficData;
+  return { trafficData, transportData };
 }
+
 
 /* -----------------------
    Helpers
@@ -102,7 +113,7 @@ function resampleCurvePoints(pts, samples = 64) {
 /* -----------------------
    Particle system + traffic spheres
 ----------------------- */
-function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
+function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, transportData = {} }) {
   const origPaths = useHeartPaths();
   const [hovered, setHovered] = useState(null);
   const groupRefs = useRef([]);
@@ -113,8 +124,9 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
   }, [origPaths]);
 
   useEffect(() => {
-  console.log("Live traffic data received:", liveTraffic);
-  }, [liveTraffic]);
+    console.log("Live traffic data received:", liveTraffic);
+    console.log("Transport data received:", transportData);
+  }, [liveTraffic, transportData]);
 
   /* ---- Anchors (live traffic) ---- */
   const anchors = useMemo(
@@ -125,7 +137,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.5,
         density: Math.max(0, 1 - ((liveTraffic?.princes?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.princes?.speed ?? 10) / 20)),
-        color: "#ff2222",
         description: "Main shopping street - peak traffic",
       },
       {
@@ -134,7 +145,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.38,
         density: Math.max(0, 1 - ((liveTraffic?.leith?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.leith?.speed ?? 10) / 20)),
-        color: "#ff3333",
         description: "Main route to port area",
       },
       {
@@ -143,7 +153,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.75,
         density: Math.max(0, 1 - ((liveTraffic?.nicolson?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.nicolson?.speed ?? 10) / 20)),
-        color: "#ff4444",
         description: "Busy N-S corridor",
       },
       {
@@ -152,7 +161,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.72,
         density: Math.max(0, 1 - ((liveTraffic?.portobello?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.portobello?.speed ?? 10) / 20)),
-        color: "#ffaa44",
         description: "Coastal suburb connection",
       },
       {
@@ -161,7 +169,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.83,
         density: Math.max(0, 1 - ((liveTraffic?.lady?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.lady?.speed ?? 10) / 20)),
-        color: "#ffbb55",
         description: "Eastern suburban route",
       },
       {
@@ -170,7 +177,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.12,
         density: Math.max(0, 1 - ((liveTraffic?.gilmerton?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.gilmerton?.speed ?? 10) / 20)),
-        color: "#99bbff",
         description: "Southern suburb link",
       },
       {
@@ -179,7 +185,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.airport?.speed ?? 10) / 20)),
-        color: "#aaccff",
         description: "Airport connection",
       },
     ],
@@ -214,8 +219,15 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
     return { density: dens / totalW, speed: spd / totalW };
   };
 
-  /* ---- Particle branches ---- */
+  /* ---- Particle branches (with bus multiplier) ---- */
   const branches = useMemo(() => {
+    // Calculate bus multiplier (more buses = more particles)
+    const busCount = transportData?.busCount ?? 0;
+    const avgBusCount = 50; // Expected average bus count
+    const busMultiplier = Math.max(0.25, Math.min(1.8, busCount / avgBusCount));
+    
+    console.log(`🚍 Bus count: ${busCount}, particle multiplier: ${busMultiplier.toFixed(2)}x`);
+    
     return paths.map((pts, i) => {
       const curve = new THREE.CatmullRomCurve3(
         pts.map((p) => new THREE.Vector3(...p)),
@@ -235,7 +247,13 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
       const avgDensity = totalDensity / samples;
       const avgSpeed = totalSpeed / samples;
       const densityPower = Math.pow(avgDensity, 3);
-      const particleCount = Math.round(40 + 220 * densityPower);
+      
+      // Base particle count from density
+      const baseParticleCount = Math.round(40 + 220 * densityPower);
+      
+      // Apply bus multiplier - more buses = more particles!
+      const particleCount = Math.round(baseParticleCount * busMultiplier);
+      
       const speedMult = 0.5 + avgSpeed;
       return {
         id: `path${i}`,
@@ -247,7 +265,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
         dir: i % 2 === 0 ? 1 : -1,
       };
     });
-  }, [paths, liveTraffic]);
+  }, [paths, liveTraffic, transportData]); // Added transportData to dependencies
 
   /* ---- Particle buffers ---- */
   const totalParticles = useMemo(() => branches.reduce((s, b) => s + b.count, 0), [branches]);
@@ -280,53 +298,51 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
 
   /* ---- Animation ---- */
   useFrame(({ clock }) => {
-  const time = clock.elapsedTime;
-  const posArr = geometry.attributes.position.array;
-  let ptr = 0;
+    const time = clock.elapsedTime;
+    const posArr = geometry.attributes.position.array;
+    let ptr = 0;
 
-  for (const p of particleData) {
-    p.t += (p.speed * 0.00015) * p.dir;
-    if (p.t > 1) p.t -= 1;
-    if (p.t < 0) p.t += 1;
-    const base = p.branch.curve.getPoint(p.t);
-    posArr.set([base.x, base.y, base.z], ptr * 3);
-    ptr++;
-  }
-  geometry.attributes.position.needsUpdate = true;
+    for (const p of particleData) {
+      p.t += (p.speed * 0.00015) * p.dir;
+      if (p.t > 1) p.t -= 1;
+      if (p.t < 0) p.t += 1;
+      const base = p.branch.curve.getPoint(p.t);
+      posArr.set([base.x, base.y, base.z], ptr * 3);
+      ptr++;
+    }
+    geometry.attributes.position.needsUpdate = true;
 
-  groupRefs.current.forEach((ref, i) => {
-    const a = anchorWorld[i];
-    if (!ref || !a) return;
+    groupRefs.current.forEach((ref, i) => {
+      const a = anchorWorld[i];
+      if (!ref || !a) return;
 
-    const { density, speed } = a;
-    const baseSize = 1 + density * 1.8;
-    const pulseAmp = 0.1 + 0.45 * density;
-    const pulseSpeed = 1.2 + speed * 3.5;
-    const scale = baseSize * (1 + pulseAmp * Math.sin(time * pulseSpeed + i));
-    ref.scale.set(scale, scale, scale);
+      const { density, speed } = a;
+      const baseSize = 1 + density * 1.8;
+      const pulseAmp = 0.1 + 0.45 * density;
+      const pulseSpeed = 1.2 + speed * 3.5;
+      const scale = baseSize * (1 + pulseAmp * Math.sin(time * pulseSpeed + i));
+      ref.scale.set(scale, scale, scale);
 
-    let color;
-    if (density > 0.7) color = "#ff2222";
-    else if (density > 0.4) color = "#ff9933";
-    else if (density > 0.15) color = "#ffee55";
-    else color = "#aaccff";
+      let color;
+      if (density > 0.7) color = "#ff2222";
+      else if (density > 0.4) color = "#ff9933";
+      else if (density > 0.15) color = "#ffee55";
+      else color = "#aaccff";
 
-    ref.children?.forEach?.((child) => {
-      if (!child.isMesh) return;
-      if (child.material) {
-        child.material.color.set(color);
-        if (child.material.emissive) {
-          child.material.emissive.set(color);
-          child.material.emissiveIntensity = 1.5 + density * 1.5;
+      ref.children?.forEach?.((child) => {
+        if (!child.isMesh) return;
+        if (child.material) {
+          child.material.color.set(color);
+          if (child.material.emissive) {
+            child.material.emissive.set(color);
+            child.material.emissiveIntensity = 1.5 + density * 1.5;
+          }
+          child.material.needsUpdate = true;
         }
-        child.material.needsUpdate = true;
-      }
+      });
+      a.color = color;
     });
-    a.color = color;
   });
-}); // 👈 CLOSES useFrame PROPERLY
-
-
 
   /* ---- Rendering ---- */
   return (
@@ -413,7 +429,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
                     fontSize: "20px",
                     fontWeight: 400,
                     color: a.color
-                      ? `${a.color}cc` // same color but slightly transparent
+                      ? `${a.color}cc`
                       : "rgba(200, 200, 200, 0.7)",
                     letterSpacing: "0.04em",
                     marginTop: "6px",
@@ -446,10 +462,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
               </div>
             </Html>
           )}
-
-
-
-
         </group>
       ))}
     </>
@@ -459,7 +471,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
 /* -----------------------
    Heart wrapper
 ----------------------- */
-function Heart({ metrics, trafficData }) {
+function Heart({ metrics, trafficData, transportData }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
@@ -504,15 +516,18 @@ function Heart({ metrics, trafficData }) {
     wireMat.color.lerp(targetColor, 0.2);
   });
 
-  
-
   return (
     <group ref={group} position={[0, -0.02, 0]}>
       <mesh geometry={mergedMesh.geometry}>
         <meshPhysicalMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
       <lineSegments geometry={wireGeometry} material={wireMat} />
-      <CoronaryParticlesFromJSON mesh={mergedMesh} traffic={metrics?.traffic ?? 0.5} liveTraffic={trafficData} />
+      <CoronaryParticlesFromJSON 
+        mesh={mergedMesh} 
+        traffic={metrics?.traffic ?? 0.5} 
+        liveTraffic={trafficData}
+        transportData={transportData}
+      />
     </group>
   );
 }
@@ -521,7 +536,7 @@ function Heart({ metrics, trafficData }) {
    Top-level component
 ----------------------- */
 export default function AnatomicalHeart({ metrics }) {
-  const trafficData = useTrafficData();
+  const { trafficData, transportData } = useTrafficData();
 
   return (
     <div style={{ width: "100%", height: "720px", background: "black" }}>
@@ -530,7 +545,7 @@ export default function AnatomicalHeart({ metrics }) {
         <directionalLight position={[5, 6, 3]} intensity={0.5} />
         <directionalLight position={[-4, -3, -2]} intensity={0.2} />
         <Suspense fallback={null}>
-          <Heart metrics={metrics} trafficData={trafficData} />
+          <Heart metrics={metrics} trafficData={trafficData} transportData={transportData} />
         </Suspense>
         <OrbitControls enableZoom enablePan={false} minDistance={1.5} maxDistance={2.5} />
       </Canvas>
