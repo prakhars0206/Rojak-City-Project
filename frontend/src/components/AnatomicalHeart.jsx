@@ -1,4 +1,3 @@
-// AnatomicalHeart.jsx
 import React, { useRef, useMemo, useEffect, useState, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html, useGLTF } from "@react-three/drei";
@@ -7,41 +6,27 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
-/* -----------------------
-   Heart Rate Monitor Component
------------------------ */
-/* -----------------------
-   Heart Rate Monitor Component
------------------------ */
-/* -----------------------
-   Heart Rate Monitor Component
------------------------ */
-/* -----------------------
-   Heart Rate Monitor Component
------------------------ */
 function HeartRateMonitor({ bpm }) {
   const [bpmHistory, setBpmHistory] = useState([]);
   const bpmRef = useRef(bpm);
-  const maxDataPoints = 40; // 10 minutes at 15-second intervals
-  
-  // Debug: Log what BPM we're receiving
+  const maxDataPoints = 40;
   useEffect(() => {
     console.log("🩺 HeartRateMonitor received BPM:", bpm);
   }, [bpm]);
-  
-  // Update ref whenever bpm changes
+
   useEffect(() => {
     bpmRef.current = bpm;
     console.log("🔄 Updated bpmRef to:", bpm);
   }, [bpm]);
-  
-  // Record BPM every 15 seconds (independent of bpm changes)
+
   useEffect(() => {
     const recordBPM = () => {
-      const currentBpm = bpmRef.current;
+      const currentBpm =
+      bpmHistory.length > 0
+        ? bpmHistory[bpmHistory.length - 1].bpm
+        : bpm || 72;
       console.log("🎯 Attempting to record BPM, current value:", currentBpm);
-      
-      // Check if we have a valid number
+
       if (!currentBpm || typeof currentBpm !== 'number' || currentBpm <= 0) {
         console.warn("⚠️ Invalid BPM value, skipping record:", currentBpm);
         return;
@@ -52,34 +37,29 @@ function HeartRateMonitor({ bpm }) {
       
       setBpmHistory(prev => {
         const newHistory = [...prev, { bpm: currentBpm, timestamp: now }];
-        // Keep only last 10 minutes of data
+
         const tenMinutesAgo = now - (10 * 60 * 1000);
         const filtered = newHistory.filter(d => d.timestamp > tenMinutesAgo).slice(-maxDataPoints);
         console.log(`📈 History length: ${filtered.length} points`);
         return filtered;
       });
     };
-    
-    // Record immediately on mount
+
     console.log("🚀 Starting heart rate monitor...");
     recordBPM();
     
-    // Then record every 15 seconds
     const interval = setInterval(recordBPM, 15000);
     
     return () => {
       console.log("🛑 Stopping heart rate monitor");
       clearInterval(interval);
     };
-  }, []); // Empty dependency array - runs once on mount
-
-  // Calculate min/max for scaling
+  }, []);
   const bpmValues = bpmHistory.map(d => d.bpm);
   const minBpm = bpmValues.length > 0 ? Math.min(...bpmValues) : 50;
   const maxBpm = bpmValues.length > 0 ? Math.max(...bpmValues) : 150;
   const bpmRange = maxBpm - minBpm || 50;
 
-  // Generate SVG path
   const generatePath = () => {
     if (bpmHistory.length < 2) return "";
     
@@ -194,7 +174,7 @@ function HeartRateMonitor({ bpm }) {
               const x = 5 + (i / Math.max(1, arr.length - 1)) * (180 - 10);
               const normalizedBpm = (d.bpm - minBpm) / bpmRange;
               const y = 50 - 5 - normalizedBpm * 40;
-              const alpha = 0.3 + (i / arr.length) * 0.7; // fade older points
+              const alpha = 0.3 + (i / arr.length) * 0.7;
               return (
                 <circle
                   key={d.timestamp}
@@ -255,9 +235,6 @@ function HeartRateMonitor({ bpm }) {
   );
 }
 
-/* -----------------------
-   Load artery flow paths
------------------------ */
 function useHeartPaths() {
   const [paths, setPaths] = useState([]);
   useEffect(() => {
@@ -269,9 +246,6 @@ function useHeartPaths() {
   return paths;
 }
 
-/* -----------------------
-   Traffic + Transport Data Hook
------------------------ */
 function useTrafficData() {
   const [trafficData, setTrafficData] = useState({});
   const [transportData, setTransportData] = useState({ busCount: 0 });
@@ -320,7 +294,6 @@ function useTrafficData() {
       newData[key] = await fetchTraffic(key, url);
     }
 
-    // Smooth interpolation
     const prevData = prevDataRef.current;
     const blended = {};
     for (const key of Object.keys(newData)) {
@@ -348,18 +321,12 @@ function useTrafficData() {
   return { trafficData, transportData };
 }
 
-/* -----------------------
-   Helpers
------------------------ */
 function resampleCurvePoints(pts, samples = 64) {
   const vpts = pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
   const curve = new THREE.CatmullRomCurve3(vpts, false, "centripetal");
   return curve.getSpacedPoints(samples - 1).map((v) => [v.x, v.y, v.z]);
 }
 
-/* -----------------------
-   Particle system + traffic spheres
------------------------ */
 function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, transportData = {} }) {
   const origPaths = useHeartPaths();
   const [hovered, setHovered] = useState(null);
@@ -370,7 +337,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     return origPaths.map((p) => resampleCurvePoints(p, 64));
   }, [origPaths]);
 
-  /* ---- Anchors (live traffic) ---- */
   const anchors = useMemo(
     () => [
       {
@@ -424,6 +390,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
       {
         name: "Edinburgh Airport",
         pathIndex: 3,
+        dataKey: "airport",
         t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.airport?.speed ?? 10) / 20)),
@@ -433,7 +400,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     [liveTraffic]
   );
 
-  /* ---- Compute world positions ---- */
   const anchorWorld = useMemo(() => {
     return anchors.map((a) => {
       const curve = paths[a.pathIndex]
@@ -444,7 +410,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     });
   }, [paths, anchors]);
 
-  /* ---- Influence field ---- */
   const getInfluenceAt = (point) => {
     let totalW = 0,
       dens = 0,
@@ -461,7 +426,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     return { density: dens / totalW, speed: spd / totalW };
   };
 
-  /* ---- Particle branches (with bus multiplier) ---- */
   const branches = useMemo(() => {
     const busCount = transportData?.busCount ?? 0;
     const avgBusCount = 150;
@@ -505,7 +469,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     });
   }, [paths, liveTraffic, transportData]);
 
-  /* ---- Particle buffers ---- */
   const totalParticles = useMemo(() => branches.reduce((s, b) => s + b.count, 0), [branches]);
   const positions = useMemo(() => new Float32Array(totalParticles * 3), [totalParticles]);
   const colors = useMemo(() => new Float32Array(totalParticles * 3), [totalParticles]);
@@ -534,7 +497,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     return g;
   }, [positions, colors]);
 
-  /* ---- Animation ---- */
   useFrame(({ clock }) => {
     const time = clock.elapsedTime;
     const posArr = geometry.attributes.position.array;
@@ -582,7 +544,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
     });
   });
 
-  /* ---- Rendering ---- */
   return (
     <>
       <points geometry={geometry}>
@@ -669,9 +630,9 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                     fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  Score: {(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Score: {(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
                   Speed: {(
-                    Number(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
+                    Number(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
                   )}{" "}
                   km/h
                 </div>
@@ -698,10 +659,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
   );
 }
 
-/* -----------------------
-   Heart wrapper
------------------------ */
-function Heart({ metrics, trafficData, transportData }) {
+function Heart({ metrics, trafficData, transportData, onBpmChange }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
@@ -747,18 +705,37 @@ function Heart({ metrics, trafficData, transportData }) {
 
   useFrame(({ clock }) => {
     if (!group.current) return;
-    
     const t = clock.elapsedTime;
-    const bpm = metrics?.bpm ?? 72;
-    const freq = bpm / 60;
+
+    if (group.current.currentBpm === undefined) group.current.currentBpm = metrics?.bpm ?? 72;
+    if (group.current.targetBpm === undefined) group.current.targetBpm = group.current.currentBpm;
+    if (group.current.lastJitterTime === undefined) group.current.lastJitterTime = t;
+
+    let baseBpm = metrics?.bpm ?? 72;
+    let currentBpm = group.current.currentBpm;
+    let targetBpm = group.current.targetBpm;
+
+    if (t - group.current.lastJitterTime > 3 + Math.random() * 3) {
+      group.current.lastJitterTime = t+80;
+      const jitter = (Math.random() - 0.5) * 0.3; 
+      targetBpm = Math.max(50, Math.min(130, baseBpm + jitter));
+      group.current.targetBpm = targetBpm;
+    }
+
+    currentBpm = lerp(currentBpm, targetBpm, 0.02);
+    group.current.currentBpm = currentBpm;
+
+    const freq = currentBpm / 60;
     const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
     group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
-    
+
     if (wireMat) {
       const colorStr = metrics?.weatherColor || "#dfb96b";
       const targetColor = new THREE.Color(colorStr.slice(0, 7));
       wireMat.color.lerp(targetColor, 0.1);
     }
+
+    onBpmChange?.(parseFloat(currentBpm.toFixed(2)));
   });
 
   return (
@@ -777,11 +754,10 @@ function Heart({ metrics, trafficData, transportData }) {
   );
 }
 
-/* -----------------------
-   Top-level component
------------------------ */
 export default function AnatomicalHeart({ metrics }) {
   const { trafficData, transportData } = useTrafficData();
+  const [liveBpm, setLiveBpm] = useState(metrics?.bpm ?? 72);
+
 
   useEffect(() => {
     console.log("🔍 AnatomicalHeart received metrics:", metrics);
@@ -789,16 +765,22 @@ export default function AnatomicalHeart({ metrics }) {
 
   return (
     <div style={{ width: "100%", height: "720px", background: "black", position: "relative" }}>
-      <HeartRateMonitor bpm={metrics?.bpm} />
+      <HeartRateMonitor bpm={liveBpm} />
       <Canvas camera={{ position: [0, 0, 3], fov: 55 }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[5, 6, 3]} intensity={0.5} />
         <directionalLight position={[-4, -3, -2]} intensity={0.2} />
         <Suspense fallback={null}>
-          <Heart metrics={metrics} trafficData={trafficData} transportData={transportData} />
+          <Heart 
+            metrics={metrics} 
+            trafficData={trafficData} 
+            transportData={transportData}
+            onBpmChange={setLiveBpm}
+          />
         </Suspense>
         <OrbitControls enableZoom enablePan={false} minDistance={1.5} maxDistance={2.5} />
       </Canvas>
+
     </div>
   );
 }
