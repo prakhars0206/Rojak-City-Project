@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from typing import List
 from datetime import datetime
+import predictor_engine
 
 from aggregator import DataAggregator
 from config.settings import UPDATE_INTERVAL, FRONTEND_URL
@@ -205,6 +206,11 @@ async def get_live_transport_data():
 async def get_stops_data():
     """Get all bus/tram stop information"""
     return await aggregator.fetch_stops_data()
+
+@app.get("/api/predictions")
+async def get_predictions():
+    """Get all active predictions and the current accuracy stats."""
+    return predictor_engine.get_live_predictions_and_stats()
 
 
 # ==================== WEBSOCKET (Real-time Updates) ====================

@@ -18,6 +18,7 @@ from data_sources.weather import WeatherFetcher
 from data_sources.energy import EnergyFetcher
 from datetime import datetime
 from typing import Dict, Optional
+import predictor_engine
 import os
 from dotenv import load_dotenv
 
@@ -231,7 +232,8 @@ class DataAggregator:
     async def fetch_all_data(self) -> Dict:
         weather_data = await self.fetch_weather_data() or {}
         energy_data = await self.fetch_energy_data() or {}
-        flight_data = await self.fetch_flight_data() or {}
+        #flight_data = await self.fetch_flight_data() or {}
+        flight_data = {}
         traffic_princes_st_data = await self.fetch_traffic_princes_st_data() or {}
         traffic_edi_airport_data = await self.fetch_traffic_edi_airport_data() or {}
         traffic_portobello_high_st_data = await self.fetch_traffic_portobello_high_st_data() or {}
@@ -278,6 +280,12 @@ class DataAggregator:
                 'activity': traffic_score * 0.55 + flight_score * 0.25 + weather_score * 0.2,
             }
         }
+
+        predictor_engine.run_prediction_cycle(combined_data)
+
+        # --- EMBED PREDICTIONS AND STATS FOR THE WEBSOCKET ---
+        combined_data['predictions'] = predictor_engine.get_live_predictions_and_stats()
+
         
         self.last_data = combined_data
         return combined_data
