@@ -15,7 +15,7 @@ _historical_traffic_scores: dict[str, deque] = {}
 # --- Prediction Model Configuration ---
 HISTORY_LENGTH = 120 # Store 60 minutes of data (120 readings at 30s intervals)
 PREDICTION_WINDOW_MINUTES = 10
-ANOMALY_THRESHOLD_STD_DEV = 1.5 # Trigger if traffic is 2 standard deviations from the mean
+ANOMALY_THRESHOLD_STD_DEV = 2 # Trigger if traffic is 2 standard deviations from the mean
 
 MIN_STD_DEV_TO_PREDICT = 1.0
 
@@ -95,10 +95,10 @@ def generate_traffic_anomaly_prediction(agg_data: dict) -> dict | None:
             
             
             # 1. Classify Severity and set duration
-            if num_std_devs_away > 2.5:
+            if num_std_devs_away > 3:
                 severity = "Major"
                 predicted_duration_mins = 30
-            else: # Anything between 1.5 and 2.5 is Minor
+            else: # Anything between 1.5 and 3 is Minor
                 severity = "Minor"
                 predicted_duration_mins = 15
 
@@ -113,7 +113,7 @@ def generate_traffic_anomaly_prediction(agg_data: dict) -> dict | None:
                 "status": "active",
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "validate_at": (datetime.now(timezone.utc) + timedelta(minutes=predicted_duration_mins)).isoformat(),
-                "prediction_text": f"{severity} Congestion on {road_name}",
+                "prediction_text": f"Potential {severity} Congestion on {road_name}",
                 "confidence": round(confidence), # DYNAMIC value
                 "severity": severity,           # "Minor" or "Major"
                 "predicted_duration_mins": predicted_duration_mins,
