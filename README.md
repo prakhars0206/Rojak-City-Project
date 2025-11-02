@@ -1,6 +1,6 @@
 # EdinPulse: Edinburgh's Living Heart
 
-EdinPulse is a full-stack application that re-imagines Edinburgh as a living, breathing organism. It achieves this through two core components: a real-time 3D visualization of the city's "heart" and a quantitative prediction engine that forecasts traffic congestion events.
+EdinPulse is a full-stack application that re-imagines Edinburgh as a living, breathing organism. It achieves this through two core components: a real-time 3D visualization of the city's "heart" and a quantitative prediction engine, "The Brain", that forecasts traffic congestion events.
 
 This project was developed for the G-Research Hackathon, with a focus on demonstrating **creativity in visualization** and **quality of data handling** in a real-time, predictive system.
 

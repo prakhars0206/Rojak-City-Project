@@ -630,7 +630,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                     fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  Score: {(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Score: {(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—").toFixed(2)} &nbsp;|&nbsp;
                   Speed: {(
                     Number(liveTraffic?.[a.dataKey || a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
                   )}{" "}
