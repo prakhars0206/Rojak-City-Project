@@ -15,7 +15,7 @@ _historical_traffic_scores: dict[str, deque] = {}
 # --- Prediction Model Configuration ---
 HISTORY_LENGTH = 120 # Store 60 minutes of data (120 readings at 30s intervals)
 PREDICTION_WINDOW_MINUTES = 10
-ANOMALY_THRESHOLD_STD_DEV = 2 # Trigger if traffic is 2 standard deviations from the mean
+ANOMALY_THRESHOLD_STD_DEV = 1.5 # Trigger if traffic is 2 standard deviations from the mean
 
 MIN_STD_DEV_TO_PREDICT = 1.0
 
