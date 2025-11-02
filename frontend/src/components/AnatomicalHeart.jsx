@@ -113,7 +113,7 @@ function resampleCurvePoints(pts, samples = 64) {
 /* -----------------------
    Particle system + traffic spheres
 ----------------------- */
-function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, transportData = {} }) {
+function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, transportData = {}, isPaused = false }) {
   const origPaths = useHeartPaths();
   const [hovered, setHovered] = useState(null);
   const groupRefs = useRef([]);
@@ -298,6 +298,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
 
   /* ---- Animation ---- */
   useFrame(({ clock }) => {
+    if (isPaused) return;
     const time = clock.elapsedTime;
     const posArr = geometry.attributes.position.array;
     let ptr = 0;
@@ -471,7 +472,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
 /* -----------------------
    Heart wrapper
 ----------------------- */
-function Heart({ metrics, trafficData, transportData }) {
+function Heart({ metrics, trafficData, transportData, isPaused = false }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
@@ -506,6 +507,7 @@ function Heart({ metrics, trafficData, transportData }) {
   );
 
   useFrame(({ clock }) => {
+    if (isPaused) return; // stop heart pulsing when paused
     if (!group.current) return;
     const t = clock.elapsedTime;
     const bpm = metrics?.bpm ?? 72;
@@ -527,6 +529,7 @@ function Heart({ metrics, trafficData, transportData }) {
         traffic={metrics?.traffic ?? 0.5} 
         liveTraffic={trafficData}
         transportData={transportData}
+        isPaused={isPaused}
       />
     </group>
   );
@@ -535,7 +538,7 @@ function Heart({ metrics, trafficData, transportData }) {
 /* -----------------------
    Top-level component
 ----------------------- */
-export default function AnatomicalHeart({ metrics }) {
+export default function AnatomicalHeart({ metrics, isPaused = false }) {
   const { trafficData, transportData } = useTrafficData();
 
   return (
@@ -545,7 +548,7 @@ export default function AnatomicalHeart({ metrics }) {
         <directionalLight position={[5, 6, 3]} intensity={0.5} />
         <directionalLight position={[-4, -3, -2]} intensity={0.2} />
         <Suspense fallback={null}>
-          <Heart metrics={metrics} trafficData={trafficData} transportData={transportData} />
+          <Heart metrics={metrics} trafficData={trafficData} transportData={transportData} isPaused={isPaused} />
         </Suspense>
         <OrbitControls enableZoom enablePan={false} minDistance={1.5} maxDistance={2.5} />
       </Canvas>
