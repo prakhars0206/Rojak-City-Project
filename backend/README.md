@@ -9,6 +9,7 @@ Real-time data aggregation for Edinburgh city visualization.
 ```bash (Windows)
 **For PowerShell:**
 cd backend
+rmdir /s /q venv
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
