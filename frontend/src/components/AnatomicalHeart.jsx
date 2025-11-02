@@ -8,6 +8,254 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
 const lerp = (a, b, t) => a + (b - a) * t;
 
 /* -----------------------
+   Heart Rate Monitor Component
+----------------------- */
+/* -----------------------
+   Heart Rate Monitor Component
+----------------------- */
+/* -----------------------
+   Heart Rate Monitor Component
+----------------------- */
+/* -----------------------
+   Heart Rate Monitor Component
+----------------------- */
+function HeartRateMonitor({ bpm }) {
+  const [bpmHistory, setBpmHistory] = useState([]);
+  const bpmRef = useRef(bpm);
+  const maxDataPoints = 40; // 10 minutes at 15-second intervals
+  
+  // Debug: Log what BPM we're receiving
+  useEffect(() => {
+    console.log("🩺 HeartRateMonitor received BPM:", bpm);
+  }, [bpm]);
+  
+  // Update ref whenever bpm changes
+  useEffect(() => {
+    bpmRef.current = bpm;
+    console.log("🔄 Updated bpmRef to:", bpm);
+  }, [bpm]);
+  
+  // Record BPM every 15 seconds (independent of bpm changes)
+  useEffect(() => {
+    const recordBPM = () => {
+      const currentBpm = bpmRef.current;
+      console.log("🎯 Attempting to record BPM, current value:", currentBpm);
+      
+      // Check if we have a valid number
+      if (!currentBpm || typeof currentBpm !== 'number' || currentBpm <= 0) {
+        console.warn("⚠️ Invalid BPM value, skipping record:", currentBpm);
+        return;
+      }
+      
+      const now = Date.now();
+      console.log(`📊 Recording BPM: ${currentBpm} at ${new Date(now).toLocaleTimeString()}`);
+      
+      setBpmHistory(prev => {
+        const newHistory = [...prev, { bpm: currentBpm, timestamp: now }];
+        // Keep only last 10 minutes of data
+        const tenMinutesAgo = now - (10 * 60 * 1000);
+        const filtered = newHistory.filter(d => d.timestamp > tenMinutesAgo).slice(-maxDataPoints);
+        console.log(`📈 History length: ${filtered.length} points`);
+        return filtered;
+      });
+    };
+    
+    // Record immediately on mount
+    console.log("🚀 Starting heart rate monitor...");
+    recordBPM();
+    
+    // Then record every 15 seconds
+    const interval = setInterval(recordBPM, 15000);
+    
+    return () => {
+      console.log("🛑 Stopping heart rate monitor");
+      clearInterval(interval);
+    };
+  }, []); // Empty dependency array - runs once on mount
+
+  // Calculate min/max for scaling
+  const bpmValues = bpmHistory.map(d => d.bpm);
+  const minBpm = bpmValues.length > 0 ? Math.min(...bpmValues) : 50;
+  const maxBpm = bpmValues.length > 0 ? Math.max(...bpmValues) : 150;
+  const bpmRange = maxBpm - minBpm || 50;
+
+  // Generate SVG path
+  const generatePath = () => {
+    if (bpmHistory.length < 2) return "";
+    
+    const width = 180;
+    const height = 50;
+    const padding = 5;
+    
+    const points = bpmHistory.map((d, i) => {
+      const x = padding + (i / Math.max(1, bpmHistory.length - 1)) * (width - 2 * padding);
+      const normalizedBpm = (d.bpm - minBpm) / bpmRange;
+      const y = height - padding - (normalizedBpm * (height - 2 * padding));
+      return `${x},${y}`;
+    });
+    
+    return `M ${points.join(" L ")}`;
+  };
+
+  const currentBpm = bpm || 72;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "15px",
+        right: "15px",
+        width: "200px",
+        background: "rgba(0, 10, 15, 0.85)",
+        border: "1px solid #00ff88",
+        borderRadius: "8px",
+        padding: "10px",
+        fontFamily: "'Courier New', monospace",
+        color: "#00ff88",
+        boxShadow: "0 0 15px rgba(0, 255, 136, 0.2)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1000,
+      }}
+    >
+      {/* Header with BPM */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        marginBottom: "8px"
+      }}>
+        <div style={{ 
+          fontSize: "9px", 
+          fontWeight: "bold",
+          letterSpacing: "0.5px",
+          opacity: 0.7
+        }}>
+          HEART RATE
+        </div>
+        <div style={{ 
+          fontSize: "24px", 
+          fontWeight: "bold",
+          lineHeight: "1",
+          color: currentBpm > 100 ? "#ff4444" : currentBpm < 60 ? "#4499ff" : "#00ff88",
+        }}>
+          {currentBpm.toFixed(1)}
+          <span style={{ fontSize: "10px", marginLeft: "3px", opacity: 0.7 }}>BPM</span>
+        </div>
+      </div>
+
+      {/* Waveform Graph */}
+      <div style={{ 
+        position: "relative",
+        height: "50px",
+        background: "rgba(0, 20, 10, 0.3)",
+        borderRadius: "4px",
+        border: "1px solid #00ff8822",
+        overflow: "hidden"
+      }}>
+        <svg 
+          width="180" 
+          height="50" 
+          style={{ display: "block" }}
+        >
+          {/* Simple grid */}
+          <defs>
+            <pattern id="smallgrid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#00ff8808" strokeWidth="0.5" />
+            </pattern>
+          </defs>
+
+          {/* Background grid */}
+          <rect width="180" height="50" fill="url(#smallgrid)" />
+
+          {/* Waveform line for the last 10 points */}
+          {bpmHistory.length > 1 && (
+            <polyline
+              points={bpmHistory
+                .slice(-10)
+                .map((d, i, arr) => {
+                  const x = 5 + (i / Math.max(1, arr.length - 1)) * (180 - 10);
+                  const normalizedBpm = (d.bpm - minBpm) / bpmRange;
+                  const y = 50 - 5 - normalizedBpm * 40;
+                  return `${x},${y}`;
+                })
+                .join(" ")}
+              fill="none"
+              stroke="#00ff88"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ filter: "drop-shadow(0 0 5px rgba(0,255,136,0.3))" }}
+            />
+          )}
+
+          {/* Fading point markers (same positions as polyline) */}
+          {bpmHistory.length > 0 &&
+            bpmHistory.slice(-10).map((d, i, arr) => {
+              const x = 5 + (i / Math.max(1, arr.length - 1)) * (180 - 10);
+              const normalizedBpm = (d.bpm - minBpm) / bpmRange;
+              const y = 50 - 5 - normalizedBpm * 40;
+              const alpha = 0.3 + (i / arr.length) * 0.7; // fade older points
+              return (
+                <circle
+                  key={d.timestamp}
+                  cx={x}
+                  cy={y}
+                  r="2"
+                  fill={`rgba(0,255,136,${alpha.toFixed(2)})`}
+                  style={{ filter: "drop-shadow(0 0 4px rgba(0,255,136,0.3))" }}
+                />
+              );
+            })}
+
+
+          
+          {/* Current value indicator */}
+          {bpmHistory.length > 0 && (
+            <circle
+              cx={175}
+              cy={50 - 5 - ((currentBpm - minBpm) / bpmRange) * 40}
+              r="2.5"
+              fill="#00ff88"
+              style={{
+                filter: "drop-shadow(0 0 4px #00ff88)",
+              }}
+            />
+          )}
+        </svg>
+        
+        {/* No data message */}
+        {bpmHistory.length === 0 && (
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontSize: "10px",
+            opacity: 0.5,
+            textAlign: "center"
+          }}>
+            Waiting for data...
+          </div>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "space-between",
+        marginTop: "6px",
+        fontSize: "8px",
+        opacity: 0.6
+      }}>
+        <div>MIN {minBpm.toFixed(1)}</div>
+        <div>MAX {maxBpm.toFixed(1)}</div>
+        <div>{bpmHistory.length} pts</div>
+      </div>
+    </div>
+  );
+}
+
+/* -----------------------
    Load artery flow paths
 ----------------------- */
 function useHeartPaths() {
@@ -175,7 +423,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
       },
       {
         name: "Edinburgh Airport",
-        datakey: "airport",
         pathIndex: 3,
         t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
@@ -216,9 +463,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
 
   /* ---- Particle branches (with bus multiplier) ---- */
   const branches = useMemo(() => {
-    // Calculate bus multiplier (more buses = more particles)
     const busCount = transportData?.busCount ?? 0;
-    const avgBusCount = 150; // Expected average bus count
+    const avgBusCount = 150;
     const busMultiplier = Math.max(0.25, Math.min(1, busCount / avgBusCount));
     
     console.log(`🚍 Bus count: ${busCount}, particle multiplier: ${busMultiplier.toFixed(2)}x`);
@@ -243,10 +489,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
       const avgSpeed = totalSpeed / samples;
       const densityPower = Math.pow(avgDensity, 3);
       
-      // Base particle count from density
       const baseParticleCount = Math.round(40 + 220 * densityPower);
-      
-      // Apply bus multiplier - more buses = more particles!
       const particleCount = Math.round(baseParticleCount * busMultiplier);
       
       const speedMult = 0.5 + avgSpeed;
@@ -361,12 +604,10 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
           onPointerOver={() => setHovered(i)}
           onPointerOut={() => setHovered(null)}
         >
-          {/* Base rings */}
           <mesh>
             <sphereGeometry args={[0.05, 16, 16]} />
             <meshBasicMaterial color={a.color} transparent opacity={0.15} wireframe />
           </mesh>
-          {/* Core sphere */}
           <mesh>
             <sphereGeometry args={[0.018, 16, 16]} />
             <meshStandardMaterial
@@ -377,7 +618,6 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
               metalness={0.7}
             />
           </mesh>
-          {/* Glow */}
           <mesh>
             <sphereGeometry args={[0.035, 16, 16]} />
             <meshBasicMaterial
@@ -415,10 +655,7 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                   textAlign: "center",
                 }}
               >
-                {/* Title */}
                 {a.name}
-
-                {/* Subtext (Score + Speed) */}
                 <div
                   style={{
                     fontSize: "20px",
@@ -432,14 +669,12 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {}, tran
                     fontFamily: "'Rajdhani', sans-serif",
                   }}
                 >
-                  Score: {(liveTraffic?.[a.datakey || a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
+                  Score: {(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.score ?? "—")} &nbsp;|&nbsp;
                   Speed: {(
-                    Number(liveTraffic?.[a.datakey || a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
+                    Number(liveTraffic?.[a.name.toLowerCase().split(" ")[0]]?.speed ?? 0).toFixed(2)
                   )}{" "}
                   km/h
                 </div>
-
-                {/* Animation style */}
                 <style>{`
                   @keyframes tooltipFade {
                     from {
@@ -470,7 +705,6 @@ function Heart({ metrics, trafficData, transportData }) {
   const group = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
-  // Debug logging
   useEffect(() => {
     console.log("💓 Heart received metrics:", {
       weatherColor: metrics?.weatherColor,
@@ -500,11 +734,10 @@ function Heart({ metrics, trafficData, transportData }) {
 
   const wireGeometry = useMemo(() => new THREE.WireframeGeometry(mergedMesh.geometry), [mergedMesh]);
   
-  // Initialize with clear sky color instead of white
   const wireMat = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: new THREE.Color("#dfb96b"), // Default to clear sky color
+        color: new THREE.Color("#dfb96b"),
         transparent: true,
         opacity: 0.12,
         blending: THREE.AdditiveBlending,
@@ -515,18 +748,16 @@ function Heart({ metrics, trafficData, transportData }) {
   useFrame(({ clock }) => {
     if (!group.current) return;
     
-    // Pulse animation
     const t = clock.elapsedTime;
     const bpm = metrics?.bpm ?? 72;
     const freq = bpm / 60;
     const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
     group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
     
-    // Update wireframe color with fallback
     if (wireMat) {
-      const colorStr = metrics?.weatherColor || "#dfb96b"; // fallback to clear sky
+      const colorStr = metrics?.weatherColor || "#dfb96b";
       const targetColor = new THREE.Color(colorStr.slice(0, 7));
-      wireMat.color.lerp(targetColor, 0.1); // Smooth transition
+      wireMat.color.lerp(targetColor, 0.1);
     }
   });
 
@@ -552,13 +783,13 @@ function Heart({ metrics, trafficData, transportData }) {
 export default function AnatomicalHeart({ metrics }) {
   const { trafficData, transportData } = useTrafficData();
 
-  // Debug what's being passed to this component
   useEffect(() => {
     console.log("🔍 AnatomicalHeart received metrics:", metrics);
   }, [metrics]);
 
   return (
-    <div style={{ width: "100%", height: "720px", background: "black" }}>
+    <div style={{ width: "100%", height: "720px", background: "black", position: "relative" }}>
+      <HeartRateMonitor bpm={metrics?.bpm} />
       <Canvas camera={{ position: [0, 0, 3], fov: 55 }}>
         <ambientLight intensity={0.9} />
         <directionalLight position={[5, 6, 3]} intensity={0.5} />

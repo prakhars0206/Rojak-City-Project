@@ -68,25 +68,31 @@ export function useCityData() {
     ws.onopen = () =>
       setCityData(prev => ({ ...prev, isConnected: true, connectionStatus: "connected" }));
 
-    ws.onmessage = e => {
-      try {
-        const data = JSON.parse(e.data);
-        setCityData(prev => {
-          const weatherDesc = data.weather?.description ?? prev.weather.description;
-          const weatherColor = getWeatherColor(weatherDesc);
+        ws.onmessage = e => {
+        try {
+            const data = JSON.parse(e.data);
+            setCityData(prev => {
+            const description =
+                data?.weather?.description ||
+                prev.weather?.description ||
+                "Unknown";
 
-          return {
-            ...prev,
-            ...mapBackendToFrontend(data || {}),
-            weather: data.weather || prev.weather,
-            weatherColor,
-            energyData: mapEnergyData(data.energy) || prev.energyData,
-          };
-        });
-      } catch (err) {
-        console.error("WebSocket parse error:", err);
-      }
+            const color = getWeatherColor(description);
+            console.log("🎨 Weather update:", description, "→", color);
+
+            return {
+                ...prev,
+                ...mapBackendToFrontend(data || {}),
+                weather: data.weather || prev.weather,
+                weatherColor: color,
+                energyData: mapEnergyData(data.energy) || prev.energyData,
+            };
+            });
+        } catch (err) {
+            console.error("WebSocket parse error:", err);
+        }
     };
+
 
     ws.onerror = () => setCityData(prev => ({ ...prev, isConnected: false, connectionStatus: "error" }));
     ws.onclose = () => {
@@ -150,17 +156,19 @@ export function useCityData() {
   /** -----------------------------
    * Weather helpers
    * ----------------------------- */
-  function getWeatherColor(description) {
-    if (description === 'Clear sky') return '#dfb96bff';
-    if (description === 'Mainly clear') return '#f4c882ff';
-    if (description === 'Partly cloudy') return '#ecc67aff';
-    if (description === 'Overcast') return '#4a595bff';
-    if (description.includes('Fog')) return '#7e7d7dff';
-    if (description.includes('rain')) return '#6c7ca4ff';
-    if (description.includes('snow')) return '#ffffffff';
-    if (description.includes('Thunderstorm')) return '#6633cc';
-    return '#734d4dff';
-  }
+  function getWeatherColor(description = "") {
+    const d = String(description).toLowerCase();
+
+    if (d.includes("clear sky") || d.includes("mainly clear")) return "#dfb96b";
+    if (d.includes("partly")) return "#ecc67a";
+    if (d.includes("overcast")) return "#4a595b";
+    if (d.includes("fog")) return "#7e7d7d";
+    if (d.includes("rain")) return "#6c7ca4";
+    if (d.includes("snow")) return "#ffffff";
+    if (d.includes("thunder")) return "#6633cc";
+    return "#734d4d"; // fallback colour
+    }
+
 
   function getWeatherIcon(description) {
     if (description === 'Clear sky' || description === 'Mainly clear') return '☀️';
@@ -174,6 +182,7 @@ export function useCityData() {
     if (description.includes('Thunderstorm')) return '⛈️';
     return '🌡️';
   }
+  
 
   return cityData;
 }
