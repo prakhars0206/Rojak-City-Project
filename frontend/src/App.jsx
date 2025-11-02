@@ -1,5 +1,5 @@
 // App.jsx
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import AnatomicalHeart from './components/AnatomicalHeart';
 import './App.css';
 import { GiCaravan, GiLightningArc, GiSunCloud, GiTrafficCone } from 'react-icons/gi';
@@ -90,15 +90,8 @@ function App() {
         setLoading(false);
         setError(null);
 
-        try {
-          const predResp = await fetch('http://localhost:8000/api/predictions');
-          if (predResp.ok) {
-            const predJson = await predResp.json();
-            setPredictions(predJson.predictions || predJson);
-          }
-        } catch (err) {
-          console.error('Failed to fetch predictions:', err);
-        }
+        // load predictions via shared helper
+        await loadPredictions();
       } catch (err) {
         console.error('Failed to fetch initial data:', err);
         setConnectionStatus('error');
@@ -170,6 +163,44 @@ function App() {
     };
     if (!loading) refetchTrafficData();
   }, [selectedStreet, isPaused]);
+
+  // helper to load predictions from backend (re-usable)
+  const loadPredictions = useCallback(async () => {
+    try {
+      const predResp = await fetch('http://localhost:8000/api/predictions', { cache: 'no-cache' });
+      if (predResp.ok) {
+        const predJson = await predResp.json();
+        setPredictions(predJson.predictions || predJson || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch predictions:', err);
+    }
+  }, []);
+
+  // auto-refresh predictions when any prediction expires (check every 5s)
+  useEffect(() => {
+    if (!predictions || predictions.length === 0) return;
+    let mounted = true;
+    const check = async () => {
+      try {
+        const now = Date.now();
+        const expired = predictions.some((p) => {
+          const t = p?.validate_at ? Date.parse(p.validate_at) : NaN;
+          return !isNaN(t) && t <= now;
+        });
+        if (expired && mounted) await loadPredictions();
+      } catch (err) {
+        console.error('Error checking prediction expiry:', err);
+      }
+    };
+    const iv = setInterval(check, 5000);
+    // also run an immediate check in case some already expired
+    check();
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, [predictions, loadPredictions]);
 
   // Fetch the selected street's backend traffic every 30s to match the heart's cadence
   useEffect(() => {
