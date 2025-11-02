@@ -764,7 +764,7 @@ export default function AnatomicalHeart({ metrics }) {
   }, [metrics]);
 
   return (
-    <div style={{ width: "100%", height: "720px", background: "black", position: "relative" }}>
+    <div style={{ width: "100%", height: "820px", background: "black", position: "relative" }}>
       <HeartRateMonitor bpm={liveBpm} />
       <Canvas camera={{ position: [0, 0, 3], fov: 55 }}>
         <ambientLight intensity={0.9} />
