@@ -13,6 +13,10 @@ package-lock.json
 .env.production
 **/.env
 
+venv/
+env/
+ENV/
+
 # Editor
 .vscode/
 .idea/

@@ -1,0 +1,24 @@
+{
+  "name": "rojak-city-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prakhars0206/Rojak-City-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/prakhars0206/Rojak-City-Project/issues"
+  },
+  "homepage": "https://github.com/prakhars0206/Rojak-City-Project#readme",
+  "dependencies": {
+    "jsdom": "^27.1.0",
+    "three": "^0.181.0"
+  }
+}

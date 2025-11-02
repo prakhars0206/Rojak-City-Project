@@ -1,262 +1,375 @@
-import React, { useRef, useMemo, Suspense, useEffect } from "react";
+// AnatomicalHeart.jsx
+import React, { useRef, useMemo, useEffect, useState, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import { OrbitControls, Html, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
-import { MeshSurfaceSampler } from "three/examples/jsm/math/MeshSurfaceSampler";
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// GPU Blood inside heart
-function GPUBloodInside({ mesh, traffic }) {
-  const pointsRef = useRef();
-  const particleCount = 2000;
+/* -----------------------
+   Load artery flow paths
+----------------------- */
+function useHeartPaths() {
+  const [paths, setPaths] = useState([]);
+  useEffect(() => {
+    fetch("/data/heart_paths.json")
+      .then((res) => res.json())
+      .then((data) => setPaths(data.paths || []))
+      .catch((err) => console.error("Failed to load heart_paths.json:", err));
+  }, []);
+  return paths;
+}
 
-  const positions = useMemo(() => {
-    if (!mesh) return new Float32Array();
-    const sampler = new MeshSurfaceSampler(mesh).build();
-    const posArray = new Float32Array(particleCount * 3);
-    const _position = new THREE.Vector3();
+/* -----------------------
+   Helpers
+----------------------- */
+function resampleCurvePoints(pts, samples = 64) {
+  const vpts = pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+  const curve = new THREE.CatmullRomCurve3(vpts, false, "centripetal");
+  return curve.getSpacedPoints(samples - 1).map((v) => [v.x, v.y, v.z]);
+}
 
-    const center = new THREE.Vector3();
-    mesh.geometry.computeBoundingBox();
-    mesh.geometry.boundingBox.getCenter(center);
+/* -----------------------
+   Particle system + traffic spheres
+----------------------- */
+function CoronaryParticlesFromJSON({ mesh, traffic = 0.5 }) {
+  const origPaths = useHeartPaths();
+  const [hovered, setHovered] = useState(null);
+  const groupRefs = useRef([]);
 
-    for (let i = 0; i < particleCount; i++) {
-      sampler.sample(_position);
-      const direction = center.clone().sub(_position).multiplyScalar(Math.random() * 0.5);
-      _position.add(direction);
+  const paths = useMemo(() => {
+    if (!origPaths.length) return [];
+    return origPaths.map((p) => resampleCurvePoints(p, 64));
+  }, [origPaths]);
 
-      posArray[i * 3] = _position.x;
-      posArray[i * 3 + 1] = _position.y;
-      posArray[i * 3 + 2] = _position.z;
-    }
-    return posArray;
-  }, [mesh]);
+  /* ---- Anchors (city locations + traffic density) ---- */
+  const anchors = [
+    { name: "Princes Street", pathIndex: 2, t: 0.5, density: 0.95, speed: 1.2, color: "#ff2222", description: "Main shopping street - peak traffic" },
+    { name: "Leith Street", pathIndex: 4, t: 0.38, density: 0.85, speed: 1.1, color: "#ff3333", description: "Main route to port area" },
+    { name: "Nicolson Street", pathIndex: 3, t: 0.56, density: 1.0, speed: 1.0, color: "#ff4444", description: "Busy N-S corridor" },
+    { name: "Portobello", pathIndex: 7, t: 0.72, density: 0.5, speed: 0.9, color: "#ffaa44", description: "Coastal suburb connection" },
+    { name: "Lady Road", pathIndex: 5, t: 0.52, density: 0.4, speed: 0.7, color: "#ffbb55", description: "Eastern suburban route" },
+    { name: "Gilmerton", pathIndex: 8, t: 0.83, density: 0.2, speed: 0.6, color: "#99bbff", description: "Southern suburb link" },
+    { name: "Edinburgh Airport", pathIndex: 1, t: 0.12, density: 0.15, speed: 0.5, color: "#aaccff", description: "Airport connection" },
+  ];
 
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        time: { value: 0 },
-        traffic: { value: traffic },
-      },
-      vertexShader: `
-        uniform float time;
-        uniform float traffic;
-        void main() {
-          vec3 pos = position;
-          float speed = 0.2 + 0.5*traffic;
-          pos += vec3(
-            sin(time*1.5 + position.x*10.0)*0.02*traffic,
-            cos(time*1.7 + position.y*10.0)*0.02*traffic,
-            sin(time*1.3 + position.z*10.0)*0.02*traffic
-          );
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
-          gl_PointSize = 2.0;
-        }
-      `,
-      fragmentShader: `
-        void main() {
-          gl_FragColor = vec4(1.0,0.0,0.0,1.0);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+  /* ---- Compute world positions for anchors ---- */
+  const anchorWorld = useMemo(() => {
+    return anchors.map((a) => {
+      const curve = paths[a.pathIndex]
+        ? new THREE.CatmullRomCurve3(paths[a.pathIndex].map((p) => new THREE.Vector3(...p)))
+        : null;
+      const pos = curve ? curve.getPoint(a.t) : new THREE.Vector3();
+      return { ...a, pos };
     });
-  }, [traffic]);
+  }, [paths]);
 
-  useFrame((state) => {
-    if (pointsRef.current) material.uniforms.time.value = state.clock.elapsedTime;
-    material.uniforms.traffic.value = traffic;
+  /* ---- Influence field ---- */
+  const getInfluenceAt = (point) => {
+    let totalW = 0;
+    let dens = 0;
+    let spd = 0;
+    const radius = 0.2;
+    anchorWorld.forEach((a) => {
+      const d = point.distanceTo(a.pos);
+      const w = Math.exp(-Math.pow(d / radius, 2));
+      totalW += w;
+      dens += w * a.density;
+      spd += w * a.speed;
+    });
+    if (totalW < 0.01) return { density: 0.1, speed: 0.5 };
+    return { density: dens / totalW, speed: spd / totalW };
+  };
+
+  /* ---- Particle branches ---- */
+  const branches = useMemo(() => {
+    return paths.map((pts, i) => {
+      const curve = new THREE.CatmullRomCurve3(
+        pts.map((p) => new THREE.Vector3(...p)),
+        false,
+        "centripetal"
+      );
+      const samples = 5;
+      let totalDensity = 0;
+      let totalSpeed = 0;
+      for (let s = 0; s < samples; s++) {
+        const t = s / (samples - 1);
+        const point = curve.getPoint(t);
+        const inf = getInfluenceAt(point);
+        totalDensity += inf.density;
+        totalSpeed += inf.speed;
+      }
+      const avgDensity = totalDensity / samples;
+      const avgSpeed = totalSpeed / samples;
+      const densityPower = Math.pow(avgDensity, 3);
+      const particleCount = Math.round(10 + 190 * densityPower);
+      const speedMult = 0.5 + avgSpeed;
+      return {
+        id: `path${i}`,
+        curve,
+        colorStart: new THREE.Color("#ff6666"),
+        colorEnd: new THREE.Color("#ff2222"),
+        speed: (0.2 + Math.random() * 0.15) * speedMult,
+        count: particleCount,
+        dir: i % 2 === 0 ? 1 : -1,
+      };
+    });
+  }, [paths]);
+
+  /* ---- Particle buffers ---- */
+  const totalParticles = useMemo(() => branches.reduce((s, b) => s + b.count, 0), [branches]);
+  const positions = useMemo(() => new Float32Array(totalParticles * 3), [totalParticles]);
+  const colors = useMemo(() => new Float32Array(totalParticles * 3), [totalParticles]);
+
+  const particleData = useMemo(() => {
+    const arr = [];
+    let ptr = 0;
+    for (const branch of branches) {
+      for (let i = 0; i < branch.count; i++) {
+        const t = Math.random();
+        const pos = branch.curve.getPoint(t);
+        const color = branch.colorStart.clone().lerp(branch.colorEnd, t);
+        positions.set([pos.x, pos.y, pos.z], ptr * 3);
+        colors.set([color.r, color.g, color.b], ptr * 3);
+        arr.push({ branch, t, speed: branch.speed, dir: branch.dir });
+        ptr++;
+      }
+    }
+    return arr;
+  }, [branches]);
+
+  const geometry = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    return g;
+  }, [positions, colors]);
+
+  /* ---- Animation ---- */
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    const posArr = geometry.attributes.position.array;
+    let ptr = 0;
+    for (const p of particleData) {
+      // Slower movement
+      p.t += (p.speed * 0.00015) * p.dir;
+      if (p.t > 1) p.t -= 1;
+      if (p.t < 0) p.t += 1;
+      const base = p.branch.curve.getPoint(p.t);
+      posArr.set([base.x, base.y, base.z], ptr * 3);
+      ptr++;
+    }
+    geometry.attributes.position.needsUpdate = true;
+
+    // Subtle pulsing anchors
+    groupRefs.current.forEach((ref, i) => {
+    if (ref && anchorWorld[i]) {
+      const { density } = anchorWorld[i]; // 0–1 range
+
+      // Base size increases with density (larger core)
+      const baseSize = 1 + density * 0.8; // up to ~1.8x
+
+      // Pulse amplitude also increases with density
+      const pulseAmp = 0.1 + 0.25 * density;
+
+      // Pulse frequency faster for denser areas
+      const pulseSpeed = 1.5 + density * 3.0;
+
+      const scale = baseSize * (1 + pulseAmp * Math.sin(time * pulseSpeed + i));
+      ref.scale.set(scale, scale, scale);
+    }
+  });
   });
 
+  /* ---- Rendering ---- */
   return (
-    <points ref={pointsRef} material={material}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={positions} count={positions.length / 3} itemSize={3} />
-      </bufferGeometry>
-    </points>
+    <>
+      <points geometry={geometry}>
+        <pointsMaterial
+          size={0.012 + 0.008 * traffic}
+          vertexColors
+          transparent
+          opacity={0.95}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
+
+      {anchorWorld.map((a, i) => (
+        <group
+          key={i}
+          position={a.pos}
+          ref={(el) => (groupRefs.current[i] = el)}
+          onPointerOver={() => setHovered(i)}
+          onPointerOut={() => setHovered(null)}
+        >
+          {/* Influence radius (faint) */}
+          <mesh>
+            <sphereGeometry args={[0.05, 16, 16]} />
+            <meshBasicMaterial
+              color={a.color}
+              transparent
+              opacity={0.15}
+              wireframe
+            />
+          </mesh>
+
+          {/* Core marker */}
+          <mesh>
+            <sphereGeometry args={[0.018, 16, 16]} />
+            <meshStandardMaterial
+              color={a.color}
+              emissive={a.color}
+              emissiveIntensity={1.8 + a.density}
+              roughness={0.3}
+              metalness={0.7}
+            />
+          </mesh>
+
+          {/* Glow */}
+          <mesh>
+            <sphereGeometry args={[0.035, 16, 16]} />
+            <meshBasicMaterial
+              color={a.color}
+              transparent
+              opacity={0.25}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
+
+          {/* Tooltip */}
+          {hovered === i && (
+            <Html distanceFactor={8}>
+              <div
+                style={{
+                  color: "white",
+                  background: "rgba(0,0,0,0.9)",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  minWidth: "200px",
+                  border: `2px solid ${a.color}`,
+                  boxShadow: `0 0 15px ${a.color}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  {a.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    opacity: 0.9,
+                    marginBottom: "6px",
+                  }}
+                >
+                  {a.description}
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    opacity: 0.8,
+                    borderTop: "1px solid rgba(255,255,255,0.2)",
+                    paddingTop: "6px",
+                  }}
+                >
+                  <strong>Density:</strong> {(a.density * 100).toFixed(0)}%<br />
+                  <strong>Speed:</strong> {(a.speed * 100).toFixed(0)}%
+                </div>
+              </div>
+            </Html>
+          )}
+        </group>
+      ))}
+    </>
   );
 }
 
-// GPU Artery Sparks
-function GPUArterySparks({ geometry, circulation }) {
-  const pointsRef = useRef();
-  const particleCount = 1000;
-
-  const positions = useMemo(() => {
-    if (!geometry) return new Float32Array();
-    const sampler = new MeshSurfaceSampler({ geometry }).build();
-    const posArray = new Float32Array(particleCount * 3);
-    const _position = new THREE.Vector3();
-
-    for (let i = 0; i < particleCount; i++) {
-      sampler.sample(_position);
-      posArray[i * 3] = _position.x;
-      posArray[i * 3 + 1] = _position.y;
-      posArray[i * 3 + 2] = _position.z;
-    }
-    return posArray;
-  }, [geometry]);
-
-  const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: { time: { value: 0 }, circulation: { value: circulation } },
-      vertexShader: `
-        uniform float time;
-        uniform float circulation;
-        void main() {
-          vec3 pos = position;
-          pos += vec3(
-            sin(time*3.0 + position.x*5.0)*0.01*circulation,
-            cos(time*2.5 + position.y*5.0)*0.01*circulation,
-            sin(time*2.7 + position.z*5.0)*0.01*circulation
-          );
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos,1.0);
-          gl_PointSize = 2.5 + 2.0*circulation;
-        }
-      `,
-      fragmentShader: `
-        uniform float circulation;
-        void main() {
-          gl_FragColor = vec4(1.0,0.8,0.2,0.5 + 0.5*circulation);
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-  }, [circulation]);
-
-  useFrame((state) => {
-    if (pointsRef.current) material.uniforms.time.value = state.clock.elapsedTime;
-    material.uniforms.circulation.value = circulation;
-  });
-
-  return (
-    <points ref={pointsRef} material={material}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" array={positions} count={positions.length / 3} itemSize={3} />
-      </bufferGeometry>
-    </points>
-  );
-}
-
-// Heart component
+/* -----------------------
+   Heart wrapper (pulse + weather)
+----------------------- */
 function Heart({ metrics }) {
   const group = useRef();
-  const wireRef = useRef();
   const { scene } = useGLTF("/models/realistic_human_heart.glb");
 
   const mergedMesh = useMemo(() => {
-    const geometries = [];
-    let material;
-    scene.traverse((obj) => {
-      if (obj.isMesh && obj.geometry) {
-        const geom = obj.geometry.clone();
-        geom.applyMatrix4(obj.matrixWorld);
-        geometries.push(geom);
-        if (!material) material = obj.material;
+    if (!scene) return null;
+    const geoms = [];
+    let mat = null;
+    scene.traverse((o) => {
+      if (o.isMesh && o.geometry) {
+        const g = o.geometry.clone();
+        g.applyMatrix4(o.matrixWorld);
+        geoms.push(g);
+        if (!mat) mat = o.material;
       }
     });
-    if (!geometries.length) return null;
-    const mergedGeometry = mergeGeometries(geometries, true);
-    return new THREE.Mesh(mergedGeometry, material);
+    if (!geoms.length) return null;
+    return new THREE.Mesh(
+      mergeGeometries(geoms, true),
+      mat || new THREE.MeshPhysicalMaterial()
+    );
   }, [scene]);
 
-  const wireframeGeometry = useMemo(() => {
-    if (!mergedMesh) return null;
-    return new THREE.WireframeGeometry(mergedMesh.geometry);
-  }, [mergedMesh]);
+  if (!mergedMesh) return null;
 
-  const wireMaterial = useMemo(
+  const wireGeometry = useMemo(
+    () => new THREE.WireframeGeometry(mergedMesh.geometry),
+    [mergedMesh]
+  );
+  const wireMat = useMemo(
     () =>
       new THREE.LineBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.12,
         blending: THREE.AdditiveBlending,
       }),
     []
   );
 
-  const scaleRef = useRef(1);
-  useFrame((state) => {
-    if (!group.current || !wireRef.current) return;
-    const t = state.clock.elapsedTime;
-    const { activity = 0.3, mood = 0, circulation = 0.5 } = metrics;
-
-    const targetPulse = 1 + 0.04 * Math.sin(t * 1.2 + activity);
-    scaleRef.current = lerp(scaleRef.current, targetPulse, 0.08);
-    group.current.scale.setScalar(scaleRef.current);
-
-    const moodNorm = (mood + 1) / 2;
-    const hue = lerp(0.65, 0.0, moodNorm);
-    const baseColor = new THREE.Color().setHSL(hue, 0.75, 0.55);
-    const glowIntensity = lerp(0.2, 1.0, circulation);
-    const targetColor = baseColor.clone().multiplyScalar(glowIntensity);
-
-    wireMaterial.color.lerp(targetColor, 0.08);
-    wireMaterial.opacity = 0.1 + 0.3 * circulation;
+  useFrame(({ clock }) => {
+    if (!group.current) return;
+    const t = clock.elapsedTime;
+    const bpm = metrics?.bpm ?? 72;
+    const freq = bpm / 60;
+    const pulse = 1 + 0.02 * Math.sin(t * freq * Math.PI * 0.5);
+    group.current.scale.setScalar(lerp(group.current.scale.x || 1, pulse, 0.06));
+    const targetColor = new THREE.Color(metrics?.weatherColor?.slice?.(0, 7) || "#ffffff");
+    wireMat.color.lerp(targetColor, 0.2);
   });
 
-  if (!mergedMesh) return null;
-
   return (
-    <group ref={group} position={[0, -0.1, 0]}>
+    <group ref={group} position={[0, -0.02, 0]}>
       <mesh geometry={mergedMesh.geometry}>
         <meshPhysicalMaterial transparent opacity={0} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
-      {wireframeGeometry && <lineSegments geometry={wireframeGeometry} material={wireMaterial} ref={wireRef} />}
-      <GPUBloodInside mesh={mergedMesh} traffic={metrics.traffic} />
-      <GPUArterySparks geometry={mergedMesh.geometry} circulation={metrics.circulation || 0.5} />
+      <lineSegments geometry={wireGeometry} material={wireMat} />
+      <CoronaryParticlesFromJSON mesh={mergedMesh} traffic={metrics?.traffic ?? 0.5} />
     </group>
   );
 }
 
-// Main component
-export default function AnatomicalHeart() {
-  const [metrics, setMetrics] = React.useState({
-    activity: 0.3,
-    mood: 0.2,
-    traffic: 0.4,
-    circulation: 0.5, // new metric for public transit
-    social: 0.3,
-    energy: 0.2,
-  });
-
-  useEffect(() => {
-    let t = 0;
-    const id = setInterval(() => {
-      t += 0.03;
-      setMetrics({
-        activity: 0.3 + 0.4 * Math.sin(t * 1.2),
-        mood: Math.sin(t * 0.7),
-        traffic: 0.3 + 0.5 * Math.abs(Math.sin(t * 1.4)),
-        circulation: 0.3 + 0.5 * Math.abs(Math.sin(t * 0.9)),
-        social: 0.2 + 0.7 * Math.abs(Math.sin(t * 1.1)),
-        energy: 0.1 + 0.7 * Math.abs(Math.cos(t * 0.9)),
-      });
-    }, 60);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    window.setHeartMetrics = (obj) => setMetrics((prev) => ({ ...prev, ...obj }));
-    return () => delete window.setHeartMetrics;
-  }, []);
-
+/* -----------------------
+   Top-level component
+----------------------- */
+export default function AnatomicalHeart({ metrics }) {
   return (
     <div style={{ width: "100%", height: "720px", background: "black" }}>
       <Canvas camera={{ position: [0, 0, 3], fov: 55 }}>
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 6, 3]} intensity={0.6} />
-        <directionalLight position={[-4, -3, -2]} intensity={0.3} />
+        <ambientLight intensity={0.9} />
+        <directionalLight position={[5, 6, 3]} intensity={0.5} />
+        <directionalLight position={[-4, -3, -2]} intensity={0.2} />
         <Suspense fallback={null}>
           <Heart metrics={metrics} />
         </Suspense>
-        <OrbitControls enableZoom={true} enablePan={false} minDistance={1.5} maxDistance={6} />
+        <OrbitControls enableZoom enablePan={false} minDistance={1.2} maxDistance={6} />
       </Canvas>
     </div>
   );
