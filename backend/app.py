@@ -212,6 +212,11 @@ async def get_predictions():
     """Get all active predictions and the current accuracy stats."""
     return predictor_engine.get_live_predictions_and_stats()
 
+@app.get("/api/air")
+async def get_air_quality_data():
+    """Get current air quality data for Edinburgh"""
+    return await aggregator.fetch_air_quality()
+
 
 # ==================== WEBSOCKET (Real-time Updates) ====================
 

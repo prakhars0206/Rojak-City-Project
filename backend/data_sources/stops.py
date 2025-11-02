@@ -1,3 +1,6 @@
+'''
+Fetches bus stop data for Edinburgh from the TFE Open Data API.
+'''
 import httpx
 import asyncio
 
