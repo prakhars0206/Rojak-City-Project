@@ -50,14 +50,20 @@ function App() {
   const wsRef = useRef(null);
 
   const streets = [
-    { id: 'princes-street', name: 'Princes Street', key: 'princes_street_traffic' },
-    { id: 'leith-street', name: 'Leith Street', key: 'leith_st_traffic' },
-    { id: 'edinburgh-airport', name: 'Edinburgh Airport', key: 'edinburgh_airport_traffic' },
-    { id: 'portobello-high-street', name: 'Portobello High Street', key: 'portobello_high_street_traffic' },
-    { id: 'nicolson-street', name: 'Nicolson Street', key: 'nicolson_street_traffic' },
-    { id: 'lady-road', name: 'Lady Road', key: 'lady_road_traffic' },
-    { id: 'gilmerton-road', name: 'Gilmerton Road', key: 'gilmerton_road_traffic' },
+    { id: 'princes-street', name: 'Princes Street', key: 'princes_street_traffic', heartKey: 'princes' },
+    { id: 'leith-street', name: 'Leith Street', key: 'leith_st_traffic', heartKey: 'leith' },
+    { id: 'edinburgh-airport', name: 'Edinburgh Airport', key: 'edinburgh_airport_traffic', heartKey: 'airport' },
+    { id: 'portobello-high-street', name: 'Portobello High Street', key: 'portobello_high_street_traffic', heartKey: 'portobello' },
+    { id: 'nicolson-street', name: 'Nicolson Street', key: 'nicolson_street_traffic', heartKey: 'nicolson' },
+    { id: 'lady-road', name: 'Lady Road', key: 'lady_road_traffic', heartKey: 'lady' },
+    { id: 'gilmerton-road', name: 'Gilmerton Road', key: 'gilmerton_road_traffic', heartKey: 'gilmerton' },
   ];
+
+  // lerp helper to match heart smoothing
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // previous blended values per heart key
+  const prevTrafficRef = useRef({});
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -66,6 +72,7 @@ function App() {
         const response = await fetch('http://localhost:8000/api/data');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+  console.debug('fetchInitialData: /api/data ->', data);
 
         if (data.weather) {
           console.log("📡 Received weather data:", data.weather);
@@ -73,7 +80,10 @@ function App() {
         }
         if (data.energy) setEnergyData(data.energy);
         const currentStreet = streets.find((s) => s.id === selectedStreet);
-        if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
+        if (currentStreet) {
+          console.debug('Initial selectedStreet:', selectedStreet, 'key:', currentStreet.key, 'present in /api/data?', !!data[currentStreet.key]);
+          if (data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
+        }
 
         setLastUpdate(new Date().toLocaleTimeString());
         setConnectionStatus('connected');
@@ -100,13 +110,14 @@ function App() {
     fetchInitialData();
 
     try {
-      const ws = new WebSocket('ws://localhost:8000/ws');
-      wsRef.current = ws;
+      const currentStreet = streets.find((s) => s.id === selectedStreet);
+      // initial traffic data already set from /api/data above; per-street refresh can be implemented
       ws.onopen = () => setConnectionStatus('connected');
       ws.onmessage = (event) => {
         if (isPaused) return;
         try {
           const data = JSON.parse(event.data);
+            console.debug('ws.onmessage ->', data);
           if (data.weather) {
             console.log("📡 WebSocket weather update:", data.weather);
             setWeatherData(data.weather);
@@ -117,7 +128,10 @@ function App() {
             setPredictions(preds || []);
           }
           const currentStreet = streets.find((s) => s.id === selectedStreet);
-          if (currentStreet && data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
+          if (currentStreet) {
+            console.debug('WS update for selectedStreet:', selectedStreet, 'key:', currentStreet.key, 'payload has key?', !!data[currentStreet.key]);
+            if (data[currentStreet.key]) setTrafficData(data[currentStreet.key]);
+          }
           setLastUpdate(new Date().toLocaleTimeString());
           setConnectionStatus('connected');
           setLoading(false);
@@ -155,6 +169,47 @@ function App() {
       }
     };
     if (!loading) refetchTrafficData();
+  }, [selectedStreet, isPaused]);
+
+  // Fetch the selected street's backend traffic every 30s to match the heart's cadence
+  useEffect(() => {
+    let mounted = true;
+
+    const endpointsById = {
+      'princes-street': 'http://localhost:8000/api/traffic/princes-street',
+      'leith-street': 'http://localhost:8000/api/traffic/leith-street',
+      'edinburgh-airport': 'http://localhost:8000/api/traffic/edinburgh-airport',
+      'portobello-high-street': 'http://localhost:8000/api/traffic/portobello-high-street',
+      'nicolson-street': 'http://localhost:8000/api/traffic/nicolson-street',
+      'lady-road': 'http://localhost:8000/api/traffic/lady-road',
+      'gilmerton-road': 'http://localhost:8000/api/traffic/gilmerton-road',
+    };
+
+    const fetchSelected = async () => {
+      if (isPaused) return;
+      const url = endpointsById[selectedStreet];
+      if (!url) return;
+      try {
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        // normalize fields we care about and keep raw payload
+        const score = Number(data?.score ?? data?.raw?.score ?? data?.traffic_score ?? 0);
+        const current_speed = Number(data?.current_speed ?? data?.speed ?? data?.raw?.current_speed ?? data?.raw?.speed ?? 0);
+        const payload = { score, current_speed, raw: data };
+        if (mounted) setTrafficData(payload);
+      } catch (err) {
+        console.warn('Failed to fetch selected street traffic:', selectedStreet, err);
+      }
+    };
+
+    // immediate fetch then interval every 30s to match heart
+    fetchSelected();
+  const iv = setInterval(fetchSelected, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
   }, [selectedStreet, isPaused]);
 
   const togglePause = () => setIsPaused((p) => !p);
@@ -215,10 +270,26 @@ function App() {
     energy: energyData?.score ? energyData.score / 100 : 0.2,
   };
 
+  // derive selected street traffic values: show speed (prefer current_speed) as main value
+  // but use the backend score (raw) for colouring/description
+  const selectedTrafficSpeedRaw =
+    trafficData?.current_speed ?? trafficData?.speed ?? trafficData?.raw?.current_speed ?? trafficData?.raw?.speed;
+  const selectedTrafficSpeed =
+    selectedTrafficSpeedRaw !== undefined && selectedTrafficSpeedRaw !== null
+      ? Number(Number(selectedTrafficSpeedRaw).toFixed(2))
+      : undefined;
+  const selectedTrafficScore =
+    trafficData?.score ?? trafficData?.raw?.score ?? trafficData?.raw?.traffic_score ?? undefined;
+
   // Debug weather updates
   useEffect(() => {
     console.log("🌈 Weather color updated:", weatherColor, "from description:", weatherData?.description);
   }, [weatherData?.description]);
+
+  // Debug selected street / trafficData mapping used by DataFlowCard
+  useEffect(() => {
+    console.debug('Selected street:', selectedStreet, 'trafficData:', trafficData);
+  }, [selectedStreet, trafficData]);
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden flex flex-col fade-in">
@@ -374,14 +445,12 @@ function App() {
                 vessel="Traffic Flow"
                 dataType={streets.find((s) => s.id === selectedStreet)?.name || 'Traffic'}
                 loading={loading}
-                value={trafficData?.score}
-                unit="/100"
-                description={
-                  trafficData?.current_speed
-                    ? `${trafficData.current_speed.toFixed(2)} km/h`
-                    : 'No data'
-                }
-                score={trafficData?.score}
+                // show speed as the main value (km/h) to match the heart display
+                value={selectedTrafficSpeed}
+                unit="km/h"
+                // description shows the backend score (raw)
+                description={selectedTrafficScore !== undefined ? `Score: ${Math.round(selectedTrafficScore)}/100` : 'No data'}
+                score={selectedTrafficScore}
                 icon={GiCaravan}
                 type="traffic"
               />
@@ -464,7 +533,7 @@ function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, valu
       return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
     }
     if (type === 'traffic') {
-      if (score >= 75) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
+      if (score >= 80) return { bg: 'bg-green-900/30', text: 'text-green-400', border: 'border-green-700' };
       if (score >= 50) return { bg: 'bg-yellow-900/30', text: 'text-yellow-400', border: 'border-yellow-700' };
       if (score >= 25) return { bg: 'bg-orange-900/30', text: 'text-orange-400', border: 'border-orange-700' };
       return { bg: 'bg-red-900/30', text: 'text-red-400', border: 'border-red-700' };
