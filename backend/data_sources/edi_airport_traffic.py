@@ -16,6 +16,7 @@ class TrafficFetcherEdiAirport:
         self.base_url = "https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
         self.lat = 55.944492
         self.lon = -3.361353
+        self.speed_limit = 112.654
 
     async def fetch_traffic_edi_airport(self):
         """Fetch current traffic data from TomTom API"""
