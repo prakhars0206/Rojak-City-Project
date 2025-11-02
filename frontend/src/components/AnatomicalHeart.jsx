@@ -139,8 +139,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
       },
       {
         name: "Nicolson Street",
-        pathIndex: 3,
-        t: 0.56,
+        pathIndex: 8,
+        t: 0.75,
         density: Math.max(0, 1 - ((liveTraffic?.nicolson?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.nicolson?.speed ?? 10) / 20)),
         color: "#ff4444",
@@ -157,8 +157,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
       },
       {
         name: "Lady Road",
-        pathIndex: 5,
-        t: 0.52,
+        pathIndex: 8,
+        t: 0.83,
         density: Math.max(0, 1 - ((liveTraffic?.lady?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.lady?.speed ?? 10) / 20)),
         color: "#ffbb55",
@@ -166,8 +166,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
       },
       {
         name: "Gilmerton",
-        pathIndex: 8,
-        t: 0.83,
+        pathIndex: 1,
+        t: 0.12,
         density: Math.max(0, 1 - ((liveTraffic?.gilmerton?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.gilmerton?.speed ?? 10) / 20)),
         color: "#99bbff",
@@ -175,8 +175,8 @@ function CoronaryParticlesFromJSON({ mesh, traffic = 0.5, liveTraffic = {} }) {
       },
       {
         name: "Edinburgh Airport",
-        pathIndex: 1,
-        t: 0.12,
+        pathIndex: 3,
+        t: 0.56,
         density: Math.max(0, 1 - ((liveTraffic?.airport?.score ?? 100) / 100)),
         speed: Math.max(0.4, Math.min(1.8, (liveTraffic?.airport?.speed ?? 10) / 20)),
         color: "#aaccff",
