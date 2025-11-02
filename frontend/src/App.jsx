@@ -407,8 +407,8 @@ function App() {
           <div className="flex flex-col gap-3">
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
               <p className="text-xs text-gray-400 mb-2">Active Predictions</p>
-              {/* 2x4 grid (2 columns x 4 rows = 8 slots) */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Single column list showing full prediction text */}
+              <div className="grid grid-cols-1 gap-2">
                 {(!predictions || predictions.length === 0) ? (
                   <div className="col-span-2 border border-gray-700 bg-gray-800 rounded-lg p-3 flex flex-col justify-center items-start">
                     <h3 className="font-semibold text-gray-400">No prediction</h3>
@@ -422,6 +422,8 @@ function App() {
                       <DataFlowCard
                         key={pred.id}
                         vessel={pred.prediction_text}
+                        // show full text in-column for predictions
+                        maxTitleLines={0}
                         dataType={locationName}
                         loading={loading}
                         description={`Severity: ${pred.severity} • Expires: ${new Date(pred.validate_at).toLocaleTimeString()}`}
@@ -444,7 +446,7 @@ function App() {
 }
 
 /* ---------- DataFlowCard Component ---------- */
-function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, value, unit, score, type }) {
+function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, value, unit, score, type, maxTitleLines = 2 }) {
   const getColorClasses = () => {
     if (loading || value === undefined)
       return { bg: 'bg-gray-800', text: 'text-gray-400', border: 'border-gray-700' };
@@ -487,14 +489,18 @@ function DataFlowCard({ vessel, icon: Icon, dataType, description, loading, valu
         <h3
           className={`font-semibold ${colors.text}`}
           title={typeof vessel === 'string' ? vessel : ''}
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            wordBreak: 'break-word'
-          }}
+          style={
+            maxTitleLines && maxTitleLines > 0
+              ? {
+                  display: '-webkit-box',
+                  WebkitLineClamp: maxTitleLines,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  wordBreak: 'break-word',
+                }
+              : undefined
+          }
         >
           {vessel}
         </h3>
